@@ -1,0 +1,7 @@
+A.Juodagalvis, Oct 07, 2014
+A set of macros to test relationships between the variables
+in the dijet n-tuple.
+Works with standalone ROOT.
+
+The location of the n-tuples has to be provided with the dijet_PFNtuple
+variable constructor. Alternatively, edit the constructor in dijet_PFNtuple.h.
