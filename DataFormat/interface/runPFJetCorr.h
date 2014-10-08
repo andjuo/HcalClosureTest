@@ -10,6 +10,23 @@
 //#include "TSystem.h"
 //#include "TROOT.h"
 
-#include "HcalClosureTest/DataFormat/src/DijetRespCorrData.cc"
+#ifndef __localRun
+#  include "HcalClosureTest/DataFormat/src/DijetRespCorrData.cc"
+#else
+#  include "../src/DijetRespCorrData.cc"
+#endif
+
+
+#ifdef __localRun
+#ifdef __CINT__
+#pragma link off all globals;
+#pragma link off all classes;
+#pragma link off all functions;
+
+#pragma link C++ class DijetRespCorrDatum;
+#pragma link C++ class DijetRespCorrData;
+#endif
+#endif
+
 
 #endif
