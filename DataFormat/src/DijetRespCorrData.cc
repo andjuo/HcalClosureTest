@@ -1,4 +1,8 @@
-#include "HcalClosureTest/DataFormat/interface/DijetRespCorrData.h"
+#ifndef __localRun
+#  include "HcalClosureTest/DataFormat/interface/DijetRespCorrData.h"
+#else
+#  include "../interface/DijetRespCorrData.h"
+#endif
 
 #include "TMinuit.h"
 #include "TMath.h"
