@@ -11,7 +11,7 @@ using namespace std;
 #ifndef __localRun
 int main()
 #else
-int testRespCorrDiJetsTree_local(int withCuts=0)
+int testRespCorrDiJetsTree_local(int withCuts=0, int maxEvents=-1)
 #endif
 
 {
@@ -333,6 +333,8 @@ int testRespCorrDiJetsTree_local(int withCuts=0)
   TH1D* h_dijetbalance_PFJet_ = new TH1D("h_dijetbalance_PFJet","Dijet balance for PFJets",200,-2,2);
   TH1D* h_dijetbalance_reconstructed_ = new TH1D("h_dijetbalance_reconstructed","Dijet balance for reconstructed jets",200,-2,2);
 
+  TH1D* h_dijet_dPhi_ = new TH1D("h_dijet_dPhi_","phi angle difference between two jets; #Delta#phi; count", 65, 0.0, 6.5);
+
   int nEventsNoRecHits = 0;
   int nEventsNoTagRecHits = 0;
   int nEventsNoProbeRecHits = 0;
@@ -347,6 +349,11 @@ int testRespCorrDiJetsTree_local(int withCuts=0)
     tree->GetEntry(iEvent);
     
 #ifdef __localRun
+    if ((maxEvents>0) && (iEvent>=maxEvents)) {
+      std::cout << "maxEvents reached\n";
+      break;
+    }
+
     if (withCuts) {
       bool failSel = 0;
       float tpfjet_Et = tpfjet_E_/cosh(tpfjet_eta_);
@@ -650,6 +657,10 @@ int testRespCorrDiJetsTree_local(int withCuts=0)
 
     h_dijetbalance_PFJet_->Fill(pf_balance);
     h_dijetbalance_reconstructed_->Fill(rec_balance);
+
+    //const double c_PI= static_cast<double>(4)*atan(static_cast<double>(1.));
+    double dPhi= fabs(tpfjet_phi_ - ppfjet_phi_);
+    h_dijet_dPhi_->Fill(dPhi);
   }
 
   for(int k=0; k<25; k++){
@@ -727,6 +738,8 @@ int testRespCorrDiJetsTree_local(int withCuts=0)
 
   h_dijetbalance_PFJet_->Write();
   h_dijetbalance_reconstructed_->Write();
+
+  h_dijet_dPhi_->Write();
 
   //h_tag_jet_Ediff_once_track_cluster_2d_->Write();
   //h_probe_jet_Ediff_once_track_cluster_2d_->Write();
