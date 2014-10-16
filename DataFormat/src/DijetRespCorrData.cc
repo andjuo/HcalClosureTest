@@ -17,6 +17,8 @@
 ClassImp(DijetRespCorrDatum)
 ClassImp(DijetRespCorrData)
 
+TMinuit *xMinuit=NULL;
+
 DijetRespCorrDatum::DijetRespCorrDatum() {
   fTagEta=fProbeEta=fTagEcalE=fProbeEcalE=0.0;
 }
@@ -275,8 +277,9 @@ DijetRespCorrData::DijetRespCorrData()
   fEcalRes=0.07;
   fHcalRes=1.15;
   fHfRes=1.35;
+  fBalanceSigma=1.;
 
-  fDoCandTrackEnergyDiff=false;
+  fDoCandTrackEnergyDiff=0;
 }
 
 DijetRespCorrData::~DijetRespCorrData()
@@ -303,7 +306,7 @@ Double_t DijetRespCorrData::GetLikelihoodDistance(const TArrayD& respcorr) const
 {
   Double_t total=0.0;
 
-  if(GetDoCandTrackEnergyDiff()){
+  if(GetDoCandTrackEnergyDiff()==1){
     // loop over each jet pair
     for(std::vector<DijetRespCorrDatum>::const_iterator it=fData.begin(); it!=fData.end(); ++it) {
       
@@ -321,7 +324,7 @@ Double_t DijetRespCorrData::GetLikelihoodDistance(const TArrayD& respcorr) const
       }
     }
   }
-  else{
+  else if (!GetDoCandTrackEnergyDiff()) {
     // loop over each jet pair
     for(std::vector<DijetRespCorrDatum>::const_iterator it=fData.begin(); it!=fData.end(); ++it) {
       
@@ -332,6 +335,20 @@ Double_t DijetRespCorrData::GetLikelihoodDistance(const TArrayD& respcorr) const
       // this is the total likelihood
       total += 0.5*(std::log(dB*dB)+B*B/dB/dB);
     }
+  }
+  else if (GetDoCandTrackEnergyDiff()==2) {
+    // loop over each jet pair
+    for(std::vector<DijetRespCorrDatum>::const_iterator it=fData.begin(); it!=fData.end(); ++it) {
+
+      // calculate the balance and resolution for each jet pair
+      Double_t B, dB;
+      GetBalance(*it, respcorr, B, dB);
+
+      // this is the total likelihood
+      dB= fBalanceSigma;
+      total += 0.5*(std::log(dB*dB) + B*B/dB/dB) * pow(it->GetWeight(),2);
+    }
+    //std::cout << "total=" << total << " dB=" << fBalanceSigma << "\n";
   }
   return total;
 }
@@ -363,39 +380,39 @@ void DijetRespCorrData::doFit(TArrayD& respcorr, TArrayD& respcorre)
   respCorrInit.Set(NUMTOWERS, array);
 
   // set the number of parameters to be the number of towers
-  TMinuit *gMinuit=new TMinuit(NUMTOWERS);
-  gMinuit->SetPrintLevel(fPrintLevel);
-  //std::cout << "========================= " << gMinuit->GetMaxIterations() << std::endl;
-  //gMinuit->SetMaxIterations(1000);
-  gMinuit->SetErrorDef(0.5); // for a log likelihood
-  gMinuit->SetFCN(FCN);
-  gMinuit->SetObjectFit(this);
+  xMinuit=new TMinuit(NUMTOWERS);
+  xMinuit->SetPrintLevel(fPrintLevel);
+  //std::cout << "========================= " << xMinuit->GetMaxIterations() << std::endl;
+  //xMinuit->SetMaxIterations(1000);
+  xMinuit->SetErrorDef(0.5); // for a log likelihood
+  xMinuit->SetFCN(FCN);
+  xMinuit->SetObjectFit(this);
 
   // define the parameters
   for(int i=0; i<respCorrInit.GetSize(); i++) {
     int ieta=-MAXIETA+i;
     std::ostringstream oss;
     oss << "Tower ieta: " << ieta;
-    gMinuit->DefineParameter(i, oss.str().c_str(), respCorrInit[i], fParStep, fParMin, fParMax);
-    if(ieta>=-maxIetaFixed && ieta<=maxIetaFixed) gMinuit->FixParameter(i);
+    xMinuit->DefineParameter(i, oss.str().c_str(), respCorrInit[i], fParStep, fParMin, fParMax);
+    if(ieta>=-maxIetaFixed && ieta<=maxIetaFixed) xMinuit->FixParameter(i);
 
     // override the HF
     /*if(ieta<=-30 || ieta>=30) {
-      gMinuit->DefineParameter(i, oss.str().c_str(), 1.0, fParStep, fParMin, fParMax);
-      //gMinuit->DefineParameter(i, oss.str().c_str(), 1.3, fParStep, fParMin, fParMax);
-      gMinuit->FixParameter(i);
+      xMinuit->DefineParameter(i, oss.str().c_str(), 1.0, fParStep, fParMin, fParMax);
+      //xMinuit->DefineParameter(i, oss.str().c_str(), 1.3, fParStep, fParMin, fParMax);
+      xMinuit->FixParameter(i);
       }*/
   }
 
   // Minimize
-  gMinuit->Migrad();
+  xMinuit->Migrad();
 
   // get the results
   TArrayD results(NUMTOWERS);
   TArrayD errors(NUMTOWERS);
   for(int i=0; i<results.GetSize(); i++) {
     Double_t val, error;
-    gMinuit->GetParameter(i, val, error);
+    xMinuit->GetParameter(i, val, error);
     results[i]=val;
     errors[i]=error;
   }
@@ -404,6 +421,89 @@ void DijetRespCorrData::doFit(TArrayD& respcorr, TArrayD& respcorre)
 
   return;
 }
+
+TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
+				  const std::vector<double> &respCorrInit,
+				  const std::vector<int> &fixTowers
+				  )
+{
+  if (int(respCorrInit.size())!=NUMTOWERS) {
+    std::cout << "doFit_v2: respCorrInit.size should be NUMTOWERS\n";
+    return NULL;
+  }
+
+  if (fDoCandTrackEnergyDiff!=2) {
+    std::cout << "doFit_v2: fDoCandTrackEnergyDiff expected to be 2\n";
+    std::cout << "  now it is " << fDoCandTrackEnergyDiff << "\n";
+    return NULL;
+  }
+
+  // determine the balance resolution
+  {
+    TArrayD noRespCorr(NUMTOWERS);
+    for (int i=0; i<NUMTOWERS; i++) noRespCorr[i]=1.;
+    double sumWeight=0, sumB=0;
+    for (unsigned int i=0; i<fData.size(); ++i) {
+      double b=0, dummy=0;
+      GetBalance(fData[i],noRespCorr,b,dummy);
+      double w= fData[i].GetWeight();
+      sumWeight += w;
+      sumB += b * w;
+    }
+    double bAvg= sumB/sumWeight;
+    double sumDiffSqr=0;
+    for (unsigned int i=0; i<fData.size(); ++i) {
+      double b=0, dummy=0;
+      GetBalance(fData[i],noRespCorr,b,dummy);
+      double w= fData[i].GetWeight();
+      sumWeight += w;
+      sumDiffSqr += pow(b-bAvg,2) * w;
+    }
+    fBalanceSigma = sqrt(sumDiffSqr/sumWeight);
+    std::cout << "fBalanceSigma=" << fBalanceSigma << "\n";
+  }
+
+  // set the number of parameters to be the number of towers
+  xMinuit=new TMinuit(NUMTOWERS);
+  xMinuit->SetPrintLevel(fPrintLevel);
+  //std::cout << "========================= " << xMinuit->GetMaxIterations() << std::endl;
+  //xMinuit->SetMaxIterations(1000);
+  xMinuit->SetErrorDef(0.5); // for a log likelihood
+  xMinuit->SetFCN(FCN);
+  xMinuit->SetObjectFit(this);
+
+  // define the parameters
+  for(unsigned int i=0; i<respCorrInit.size(); i++) {
+    int ieta=-MAXIETA+i;
+    std::ostringstream oss;
+    oss << "Tower ieta: " << ieta;
+    xMinuit->DefineParameter(i, oss.str().c_str(), respCorrInit[i],
+			     fParStep, fParMin, fParMax);
+    if (std::find(fixTowers.begin(),fixTowers.end(), ieta)!=fixTowers.end()) {
+      std::cout << "-- fix parameter\n";
+      xMinuit->FixParameter(i);
+    }
+  }
+  //for (unsigned int i=0; i<fixTowers.size(); ++i) {
+  //  xMinuit->FixParameter(fixTowers[i]);
+  //}
+
+  // Minimize
+  xMinuit->mnscan();
+  //xMinuit->Migrad();
+
+  // return the results
+  TH1D* histo=new TH1D(hname,htitle,NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
+  for(int i=1; i<=NUMTOWERS; i++) {
+    Double_t val, error;
+    xMinuit->GetParameter(i, val, error);
+    histo->SetBinContent(i, val);
+    histo->SetBinError(i, error);
+  }
+
+  return histo;
+}
+
 
 void DijetRespCorrData::GetBalance(const DijetRespCorrDatum& datum, const TArrayD& respcorr, Double_t& balance_, Double_t& resolution_) const
 {
@@ -449,8 +549,9 @@ void DijetRespCorrData::GetTrackEnergyDiff(const DijetRespCorrDatum& datum, cons
 
 void DijetRespCorrData::FCN(Int_t &npar, Double_t*, Double_t &f, Double_t *par, Int_t)
 {
+  if (0 && (npar==0)) std::cout << "npar=0\n"; // get rid of compiler msg
   // get the relevant data
-  const DijetRespCorrData* data=dynamic_cast<const DijetRespCorrData*>(gMinuit->GetObjectFit());
+  const DijetRespCorrData* data=dynamic_cast<const DijetRespCorrData*>(xMinuit->GetObjectFit());
   TArrayD respcorr;
   respcorr.Set(NUMTOWERS, par);
   f = data->GetLikelihoodDistance(respcorr);

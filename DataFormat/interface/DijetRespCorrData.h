@@ -11,6 +11,7 @@
 #include "TObject.h"
 #include "Rtypes.h"
 #include "TArrayD.h"
+#include <TMinuit.h>
 
 #include <map>
 #include <vector>
@@ -29,6 +30,12 @@ class TH2D;
 const int MAXIETA = 41;
 const int NUMTOWERS = 83;
   
+//
+// global variables
+//
+
+extern TMinuit *xMinuit;
+
 
 //
 // class definitions
@@ -83,7 +90,7 @@ class DijetRespCorrDatum : public TObject
   // scale the hcal energy by the response corrections
   void GetTrackVariables(const TArrayD& respcorr, const Int_t index_,  Double_t& TrackP_, Double_t& EcalE_, Double_t& HcalE_) const;
 
- private:
+ protected:
   // event weight
   Double_t fWeight;
 
@@ -130,6 +137,11 @@ class DijetRespCorrData : public TObject
   void doFit(TArrayD& respcorr, TArrayD& respcorre); // use default resp corrections
   TH1D* doFit(const char* name, const char* title); // use default resp corrections
 
+  TH1D* doFit_v2(const char *name, const char *title,
+		 const std::vector<double> &respCorrInit,
+		 const std::vector<int> &fixTowers
+		 );
+
   // fitting parameters
   inline void SetPrintLevel(Int_t p) { fPrintLevel=p; }
   inline void SetParStep(Double_t p) { fParStep=p; }
@@ -139,8 +151,9 @@ class DijetRespCorrData : public TObject
   inline void SetHcalRes(Double_t p=1.15) { fHcalRes=p; }
   inline void SetHfRes(Double_t p=1.35) { fHfRes=p; }
   
-  inline void SetDoCandTrackEnergyDiff(Bool_t p) { fDoCandTrackEnergyDiff=p; }
-  inline Bool_t GetDoCandTrackEnergyDiff(void) const { return fDoCandTrackEnergyDiff; }
+  inline void SetDoCandTrackEnergyDiff(Int_t p) { fDoCandTrackEnergyDiff=p; }
+  inline Int_t GetDoCandTrackEnergyDiff(void) const { return fDoCandTrackEnergyDiff; }
+  inline Double_t GetBalanceSigma() const { return fBalanceSigma; }
 
  private:
   // calculate the balance parameter and its resolution for a given dijet pair
@@ -161,8 +174,9 @@ class DijetRespCorrData : public TObject
   Double_t fParMin;
   Double_t fParMax;
   Double_t fEcalRes, fHcalRes, fHfRes;
+  Double_t fBalanceSigma;
 
-  Bool_t fDoCandTrackEnergyDiff;
+  Int_t fDoCandTrackEnergyDiff;
 
   ClassDef(DijetRespCorrData, 1);
 };
