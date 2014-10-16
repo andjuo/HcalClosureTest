@@ -4,6 +4,7 @@
 #  include "HcalClosureTest/DataFormat/interface/runPFJetCorr.h"
 #else
 #  include "../interface/runPFJetCorr.h"
+//#  include "link_DijetRespCorrData.h"  // for testing purposes
 #endif
 
 using namespace std;
@@ -333,7 +334,9 @@ int runPFJetCorr_local(int maxEvents=-1)
 	tjet_had_candNoRecHits_E += sqrt(tjet_candtrack_px_->at(tjet_had_candtrackind_->at(iHad))*tjet_candtrack_px_->at(tjet_had_candtrackind_->at(iHad)) + tjet_candtrack_py_->at(tjet_had_candtrackind_->at(iHad))*tjet_candtrack_py_->at(tjet_had_candtrackind_->at(iHad)) + tjet_candtrack_pz_->at(tjet_had_candtrackind_->at(iHad))*tjet_candtrack_pz_->at(tjet_had_candtrackind_->at(iHad))) - tjet_had_EcalE_->at(iHad);
       }
     }
-    datum.SetTagEcalE(tjet_unkown_E_ + tjet_electron_E_ + tjet_muon_E_ + tjet_photon_E_ + tjet_had_EcalE_total + tjet_had_candNoRecHits_E);
+    datum.SetTagEcalE(tjet_unkown_E_ + tjet_electron_E_ + tjet_muon_E_ +
+		      tjet_photon_E_ + tjet_had_EcalE_total
+		      + tjet_had_candNoRecHits_E);
 
     float sump = 0;
     datum.SetProbeEta(pjet_eta_);
@@ -369,7 +372,9 @@ int runPFJetCorr_local(int maxEvents=-1)
 	pjet_had_candNoRecHits_E += sqrt(pjet_candtrack_px_->at(pjet_had_candtrackind_->at(iHad))*pjet_candtrack_px_->at(pjet_had_candtrackind_->at(iHad)) + pjet_candtrack_py_->at(pjet_had_candtrackind_->at(iHad))*pjet_candtrack_py_->at(pjet_had_candtrackind_->at(iHad)) + pjet_candtrack_pz_->at(pjet_had_candtrackind_->at(iHad))*pjet_candtrack_pz_->at(pjet_had_candtrackind_->at(iHad))) - pjet_had_EcalE_->at(iHad);
       }
     }
-    datum.SetProbeEcalE(pjet_unkown_E_ + pjet_electron_E_ + pjet_muon_E_ + pjet_photon_E_ + pjet_had_EcalE_total);
+    datum.SetProbeEcalE(pjet_unkown_E_ + pjet_electron_E_ + pjet_muon_E_ +
+			pjet_photon_E_ + pjet_had_EcalE_total +
+			pjet_had_candNoRecHits_E);
 
     datum.SetThirdJetPx(thirdjet_px_);
     datum.SetThirdJetPy(thirdjet_py_);
@@ -379,6 +384,12 @@ int runPFJetCorr_local(int maxEvents=-1)
       continue;
     }
     
+#ifdef link_DijetRespCorrData_H__test
+    if (1) {
+      std::cout << "iEvent=" << iEvent << "\n";
+      std::cout << datum;
+    }
+#endif
 
     data.push_back(datum);
   }
