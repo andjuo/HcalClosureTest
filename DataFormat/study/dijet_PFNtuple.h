@@ -335,6 +335,15 @@ public :
    void DeactivateBranches();
    void ActivateBranches(int count, ...); // list n branch names
    void ActivateBranches(const std::vector<TString> &brV); // list of branch names
+
+   friend
+     std::ostream& operator<<(std::ostream &out, dijet_PFNtuple &obj) {
+     if (out==std::cout) obj.Show();
+     else out << "cannot print dijet_PFNtuple\n";
+     return out;
+   }
+
+   void PrintSelectedFields(int selection=0);
 };
 
 #endif
