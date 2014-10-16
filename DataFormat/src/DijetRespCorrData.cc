@@ -490,7 +490,7 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
 
   // Minimize
   xMinuit->mnscan();
-  //xMinuit->Migrad();
+  xMinuit->Migrad();
 
   // return the results
   TH1D* histo=new TH1D(hname,htitle,NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
