@@ -7,7 +7,7 @@
 
 // ----------------------------------------------------------------
 
-void fitSkim(Long64_t maxEntries=10) {
+void fitSkim(Long64_t maxEntries=10, int fitStrategy_User=-1) {
   DijetRespCorrDatumExtended_t *d= new DijetRespCorrDatumExtended_t();
   TFile inpFile("skim.root","READ");
   TTree *inpTree = (TTree*)inpFile.Get("dijet_data");
@@ -17,16 +17,21 @@ void fitSkim(Long64_t maxEntries=10) {
   Cuts_t applyCut;
   //applyCut.setEtDiff(0.,10., -1,-1);
   //applyCut.setEtDiff(0.,10., 0, 10);
-  applyCut.setEtDiffRatio(-2.,0.);
+  //applyCut.setEtDiffRatio(-2.,0.);
 
-  int removeThirdJetContribution=1;
+  // The third jet is a sum of the remaining jets
+  // It's better to apply a cut rather than completely remove
+  // the contribution
+  int removeThirdJetContribution=0;
 
   TString hname="hTowCount";
   TH1D *hTowCount= new TH1D(hname,hname, 2*MAXIETA+3, -MAXIETA-1, MAXIETA+2);
   hTowCount->SetDirectory(0);
 
   DijetRespCorrData data;
-  data.SetDoCandTrackEnergyDiff(2);
+  data.SetDoCandTrackEnergyDiff(2); // original balance
+  //data.SetDoCandTrackEnergyDiff(3); // MET
+  if (fitStrategy_User>0) data.SetDoCandTrackEnergyDiff(fitStrategy_User);
   data.SetParStep(1e-4);
   data.SetParMax(2.);
   data.SetParMin(1e-6);
@@ -80,11 +85,13 @@ void fitSkim(Long64_t maxEntries=10) {
 
   printHisto(hTowCount);
 
-  std::vector<double> iniCfVals(NUMTOWERS,1.); // no correction
+  int iniCfArrSize= NUMTOWERS;
+  if (data.GetDoCandTrackEnergyDiff()==4) iniCfArrSize++;
+  std::vector<double> iniCfVals(iniCfArrSize,1.); // no correction
   std::vector<int> fixParameters;
-  double maxWeight= 0.1*hTowCount->GetMaximum();
+  double maxWeight= 0.01*hTowCount->GetMaximum();
   fixParameters.reserve(NUMTOWERS);
-  if (0)
+  if (1)
   for (int ibin=1; ibin<=hTowCount->GetNbinsX(); ++ibin) {
     int iTow= ibin - 2 - MAXIETA;
     std::cout << "iTow=" << iTow << "\n";
@@ -98,6 +105,13 @@ void fitSkim(Long64_t maxEntries=10) {
 
   //xMinuit->mnscan();
   printHisto(hCoef);
+
+  if (1) {
+    TCanvas *cx=new TCanvas("cC","cC",600,600);
+    hCoef->SetMarkerStyle(24);
+    hCoef->Draw("LPE");
+    cx->Update();
+  }
 
   /*
   // Plot the distributions
