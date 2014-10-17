@@ -305,6 +305,7 @@ Int_t DijetRespCorrData::GetSize(void) const
 Double_t DijetRespCorrData::GetLikelihoodDistance(const TArrayD& respcorr) const
 {
   Double_t total=0.0;
+  //std::cout << "GetLikelihoodDistance" << std::endl;
 
   if(GetDoCandTrackEnergyDiff()==1){
     // loop over each jet pair
@@ -349,6 +350,22 @@ Double_t DijetRespCorrData::GetLikelihoodDistance(const TArrayD& respcorr) const
       total += 0.5*(std::log(dB*dB) + B*B/dB/dB) * pow(it->GetWeight(),2);
     }
     //std::cout << "total=" << total << " dB=" << fBalanceSigma << "\n";
+  }
+  else if ((GetDoCandTrackEnergyDiff()==3) ||
+	   (GetDoCandTrackEnergyDiff()==4)) {
+    // loop over each jet pair
+    for(std::vector<DijetRespCorrDatum>::const_iterator it=fData.begin(); it!=fData.end(); ++it) {
+
+      // calculate the balance and resolution for each jet pair
+      Double_t B, dB, dummy;
+      //GetBalance(*it, respcorr, B, dB);
+      GetMET(*it, respcorr, B, dummy, dB);
+
+      // this is the total likelihood
+      dB= fBalanceSigma;
+      total += 0.5*(std::log(dB*dB) + B*B/dB/dB) * pow(it->GetWeight(),2);
+    }
+    //std::cout << "total=" << total << " dB=" << fBalanceSigma << std::endl;
   }
   return total;
 }
@@ -423,29 +440,38 @@ void DijetRespCorrData::doFit(TArrayD& respcorr, TArrayD& respcorre)
 }
 
 TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
-				  const std::vector<double> &respCorrInit,
+				  std::vector<double> &respCorrInit,
 				  const std::vector<int> &fixTowers
 				  )
 {
-  if (int(respCorrInit.size())!=NUMTOWERS) {
-    std::cout << "doFit_v2: respCorrInit.size should be NUMTOWERS\n";
+  int corrArrSize=NUMTOWERS;
+  if (fDoCandTrackEnergyDiff==4) corrArrSize++;
+
+  if (int(respCorrInit.size())!=corrArrSize) {
+    std::cout << "doFit_v2: respCorrInit.size should be " << corrArrSize
+	      << ". NUMTOWERS=" << NUMTOWERS << "\n";
     return NULL;
   }
 
-  if (fDoCandTrackEnergyDiff!=2) {
-    std::cout << "doFit_v2: fDoCandTrackEnergyDiff expected to be 2\n";
+  if (fDoCandTrackEnergyDiff<2) {
+    std::cout << "doFit_v2: fDoCandTrackEnergyDiff expected to be >=2\n";
     std::cout << "  now it is " << fDoCandTrackEnergyDiff << "\n";
     return NULL;
   }
 
   // determine the balance resolution
   {
-    TArrayD noRespCorr(NUMTOWERS);
-    for (int i=0; i<NUMTOWERS; i++) noRespCorr[i]=1.;
+    TArrayD noRespCorr(corrArrSize);
+    for (int i=0; i<corrArrSize; i++) noRespCorr[i]=1.;
     double sumWeight=0, sumB=0;
     for (unsigned int i=0; i<fData.size(); ++i) {
-      double b=0, dummy=0;
-      GetBalance(fData[i],noRespCorr,b,dummy);
+      double b=0, dummy1=0, dummy2=0;
+      if (fDoCandTrackEnergyDiff==2) {
+	GetBalance(fData[i],noRespCorr,b,dummy1);
+      }
+      else {
+	GetMET(fData[i],noRespCorr,b,dummy1,dummy2);
+      }
       double w= fData[i].GetWeight();
       sumWeight += w;
       sumB += b * w;
@@ -453,8 +479,13 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
     double bAvg= sumB/sumWeight;
     double sumDiffSqr=0;
     for (unsigned int i=0; i<fData.size(); ++i) {
-      double b=0, dummy=0;
-      GetBalance(fData[i],noRespCorr,b,dummy);
+      double b=0, dummy1=0, dummy2=0;
+      if (fDoCandTrackEnergyDiff==2) {
+	GetBalance(fData[i],noRespCorr,b,dummy1);
+      }
+      else {
+	GetMET(fData[i],noRespCorr,b,dummy1,dummy2);
+      }
       double w= fData[i].GetWeight();
       sumWeight += w;
       sumDiffSqr += pow(b-bAvg,2) * w;
@@ -464,7 +495,7 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
   }
 
   // set the number of parameters to be the number of towers
-  xMinuit=new TMinuit(NUMTOWERS);
+  xMinuit=new TMinuit(corrArrSize);
   xMinuit->SetPrintLevel(fPrintLevel);
   //std::cout << "========================= " << xMinuit->GetMaxIterations() << std::endl;
   //xMinuit->SetMaxIterations(1000);
@@ -473,7 +504,7 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
   xMinuit->SetObjectFit(this);
 
   // define the parameters
-  for(unsigned int i=0; i<respCorrInit.size(); i++) {
+  for(int i=0; i<NUMTOWERS; i++) {
     int ieta=-MAXIETA+i;
     std::ostringstream oss;
     oss << "Tower ieta: " << ieta;
@@ -483,6 +514,13 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
       std::cout << "-- fix parameter\n";
       xMinuit->FixParameter(i);
     }
+  }
+  if (fDoCandTrackEnergyDiff==4) {
+    std::ostringstream oss;
+    oss << "HadEn scale: ";
+    int idx=NUMTOWERS;
+    xMinuit->DefineParameter(idx, oss.str().c_str(),
+			     respCorrInit[idx], 0.1, 1e-3, 100);
   }
   //for (unsigned int i=0; i<fixTowers.size(); ++i) {
   //  xMinuit->FixParameter(fixTowers[i]);
@@ -499,6 +537,15 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
     xMinuit->GetParameter(i, val, error);
     histo->SetBinContent(i, val);
     histo->SetBinError(i, error);
+  }
+
+  for (unsigned int i=0; i<respCorrInit.size(); ++i) {
+    Double_t val,error;
+    xMinuit->GetParameter(i+1, val,error);
+    respCorrInit[i]=val;
+    if (int(i)>=NUMTOWERS) {
+      std::cout << "spec param #" << i << " " << val << " +- " << error <<"\n";
+    }
   }
 
   return histo;
@@ -535,6 +582,50 @@ void DijetRespCorrData::GetBalance(const DijetRespCorrDatum& datum, const TArray
   return;
 }
 
+void DijetRespCorrData::GetMET(const DijetRespCorrDatum& datum,
+			       const TArrayD& respcorr,
+			       Double_t& met_,
+			       Double_t &metDivAveEt_,
+			       Double_t& resolution_) const
+{
+  Double_t te, th, thf;
+  Double_t pe, ph, phf;
+  datum.GetTagEnergies(respcorr, te, th, thf);
+  datum.GetProbeEnergies(respcorr, pe, ph, phf);
+
+  if (respcorr.GetSize()>NUMTOWERS) {
+    th*= respcorr[NUMTOWERS];
+    ph*= respcorr[NUMTOWERS];
+    int idx=(respcorr.GetSize()==NUMTOWERS+1) ? NUMTOWERS : (NUMTOWERS+1);
+    thf*=respcorr[idx];
+    phf*=respcorr[idx];
+    if (0) {
+      double x=respcorr[NUMTOWERS];
+      if (x!=1)
+	std::cout << " last correction=" << x << std::endl;
+    }
+  }
+
+  // calculate the resolution and balance in E_T, not E
+  Double_t tet=(te+th+thf)/std::cosh(datum.GetTagEta());
+  Double_t pet=(pe+ph+phf)/std::cosh(datum.GetProbeEta());
+
+  // correct the tag/probe E_T's for the "third jet"
+  Double_t tpx = tet*std::cos(datum.GetTagPhi());
+  Double_t tpy = tet*std::sin(datum.GetTagPhi());
+  Double_t ppx = pet*std::cos(datum.GetProbePhi());
+  Double_t ppy = pet*std::sin(datum.GetProbePhi());
+
+  Double_t sumPx= tpx + ppx + datum.GetThirdJetPx();
+  Double_t sumPy= tpy + ppy + datum.GetThirdJetPy();
+
+  met_= sqrt(sumPx*sumPx + sumPy*sumPy);
+  metDivAveEt_ = met_*2/(tet+pet);
+
+  resolution_ = 0.035/datum.GetWeight(); //0.035
+  return;
+}
+
 void DijetRespCorrData::GetTrackEnergyDiff(const DijetRespCorrDatum& datum, const Int_t index, const TArrayD& respcorr, Double_t& Ediff_, Double_t& dEdiff_) const
 {
   Double_t TrackP, EcalE, HcalE;
@@ -553,7 +644,9 @@ void DijetRespCorrData::FCN(Int_t &npar, Double_t*, Double_t &f, Double_t *par, 
   // get the relevant data
   const DijetRespCorrData* data=dynamic_cast<const DijetRespCorrData*>(xMinuit->GetObjectFit());
   TArrayD respcorr;
-  respcorr.Set(NUMTOWERS, par);
+  int arrSize=NUMTOWERS;
+  if (data->GetDoCandTrackEnergyDiff()==4) arrSize++;
+  respcorr.Set(arrSize, par);
   f = data->GetLikelihoodDistance(respcorr);
   
   return;

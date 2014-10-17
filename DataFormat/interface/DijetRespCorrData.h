@@ -138,7 +138,7 @@ class DijetRespCorrData : public TObject
   TH1D* doFit(const char* name, const char* title); // use default resp corrections
 
   TH1D* doFit_v2(const char *name, const char *title,
-		 const std::vector<double> &respCorrInit,
+		 std::vector<double> &respCorrInit,
 		 const std::vector<int> &fixTowers
 		 );
 
@@ -158,6 +158,8 @@ class DijetRespCorrData : public TObject
  private:
   // calculate the balance parameter and its resolution for a given dijet pair
   void GetBalance(const DijetRespCorrDatum& datum, const TArrayD& respcorr, Double_t& balance_, Double_t& resolution_) const;
+  void GetMET(const DijetRespCorrDatum& datum, const TArrayD& respcorr,
+	  Double_t& met_, Double_t &metDivAveEt_, Double_t& resolution_) const;
   // Calculate the difference in energy between the hits and the candidate's track
   //void GetTrackEnergyDiff(const DijetRespCorrDatum& datum, const Int_t& index, const TArrayD& respcorr, Double_t& Ediff_, Double_t& dEdiff_) const;
   void GetTrackEnergyDiff(const DijetRespCorrDatum& datum, const Int_t index, const TArrayD& respcorr, Double_t& Ediff_, Double_t& dEdiff_) const;
