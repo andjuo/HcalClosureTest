@@ -15,7 +15,8 @@ void analyzeSkim(Long64_t maxEntries=10) {
   assert(inpTree);
   inpTree->SetBranchAddress("dijet_data",&d);
 
-  const int plotBalanceVsCf=0;
+  const int plotBalanceVsCf=1;
+  const int balanceKind=1; //  0 - original, 1 - met, 2 - metDivAvePt
 
   std::vector<Cuts_t*> cutV;
   std::vector<TH1D*> hTowV; // (iTow,Count)
@@ -71,11 +72,20 @@ void analyzeSkim(Long64_t maxEntries=10) {
   }
 
   // prepare histogram of balance vs iTower
-  if (plotBalanceVsCf)
+  if (plotBalanceVsCf) {
+    TString balanceStr;
+    switch(balanceKind) {
+    case 0: balanceStr="Balance"; break;
+    case 1: balanceStr="MET"; break;
+    case 2: balanceStr="METdivEt"; break;
+    default: std::cout << "not ready for balanceKind=" << balanceKind << "\n";
+      return;
+    }
   for (int iTow=-MAXIETA; iTow<=MAXIETA; iTow++) {
-    TString hName=Form("hTowBalance_%d_",iTow)
+    TString hName=Form("hTow%s_%d_",balanceStr.Data(),iTow)
       + cutV[balanceTargetCutIdx]->name();
-    TString hTitle=hName + TString(Form(";C_{iTow=%d};balance [GeV]",iTow));
+    TString hTitle=hName +
+      TString(Form(";C_{iTow=%d};%s [GeV]",iTow,balanceStr.Data()));
     int locCount=40;
     double cfMin=0.;
     double cfMax=2.;
@@ -83,23 +93,24 @@ void analyzeSkim(Long64_t maxEntries=10) {
     h->SetDirectory(0);
     hTowBalance_iTow_V.push_back(h);
 
-    hName.ReplaceAll("Balance","BalanceSumW");
-    hTitle.ReplaceAll("Balance","BalanceSumW");
+    hName.ReplaceAll(balanceStr,balanceStr+TString("SumW"));
+    hTitle.ReplaceAll(balanceStr,balanceStr+TString("SumW"));
     TH1D* hSumW= new TH1D(hName,hTitle, locCount,cfMin,cfMax);
     hSumW->SetDirectory(0);
     hTowBalance_iTow_SumW_V.push_back(hSumW);
 
-    hName.ReplaceAll("BalanceSumW","BalanceSumXW");
-    hTitle.ReplaceAll("BalanceSumW","BalanceSumXW");
+    hName.ReplaceAll("SumW","SumXW");
+    hTitle.ReplaceAll("SumW","SumXW");
     TH1D* hSumXW= new TH1D(hName,hTitle, locCount,cfMin,cfMax);
     hSumXW->SetDirectory(0);
     hTowBalance_iTow_SumXW_V.push_back(hSumXW);
 
-    hName.ReplaceAll("BalanceSumXW","BalanceSumXXW");
-    hTitle.ReplaceAll("BalanceSumXW","BalanceSumXXW");
+    hName.ReplaceAll("SumXW","SumXXW");
+    hTitle.ReplaceAll("SumXW","SumXXW");
     TH1D* hSumXXW= new TH1D(hName,hTitle, locCount,cfMin,cfMax);
     hSumXXW->SetDirectory(0);
     hTowBalance_iTow_SumXXW_V.push_back(hSumXXW);
+  }
   }
   // prepare the coefficients
   TArrayD unitArr(NUMTOWERS);
@@ -180,11 +191,19 @@ void analyzeSkim(Long64_t maxEntries=10) {
 	  TH1D* hW= hTowBalance_iTow_SumW_V[idx];
 	  TH1D* hXW= hTowBalance_iTow_SumXW_V[idx];
 	  TH1D* hXXW= hTowBalance_iTow_SumXXW_V[idx];
-	  double balance=0, resolution=0;
+	  double balance=0, balanceV2=0, resolution=0;
 	  for (int ibin=1; ibin<=hW->GetNbinsX(); ++ibin) {
 	    double cf= hW->GetBinCenter(ibin);
 	    unitArr[idx]=cf;
-	    DRCD.GetBalance(*d,unitArr,balance,resolution);
+	    switch(balanceKind) {
+	    case 0: DRCD.GetBalance(*d,unitArr,balance,resolution); break;
+	    case 1: DRCD.GetMET(*d,unitArr,balance,balanceV2,resolution);break;
+	    case 2: DRCD.GetMET(*d,unitArr,balanceV2,balance,resolution);break;
+	    default:
+	      std::cout << "DRCD not ready for balanceKind="
+			<< balanceKind << "\n";
+	      return;
+	    }
 	    hW->Fill(cf, d->GetWeight());
 	    hXW->Fill(cf, balance * d->GetWeight());
 	    hXXW->Fill(cf, balance*balance * d->GetWeight());
