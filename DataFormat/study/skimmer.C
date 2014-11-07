@@ -36,6 +36,10 @@ void skimmer(Long64_t maxEntries=10) {
   tagV.push_back("tpfjet_twr_clusterind");
   tagV.push_back("tpfjet_cluster_dR");
   
+  tagV.push_back("tpfjet_cluster_eta");
+  tagV.push_back("tpfjet_cluster_phi");
+  tagV.push_back("tpfjet_twr_ieta");
+  tagV.push_back("tpfjet_twr_iphi");
 
   inpData.ActivateBranches(tagV);
 
@@ -48,7 +52,7 @@ void skimmer(Long64_t maxEntries=10) {
   inpData.ActivateBranches(3,"pf_dijet_deta","pf_dijet_dphi","pf_weight");
 
 
-  Long64_t nEntries= inpData.fChain->GetEntriesFast();
+  Long64_t nEntries= inpData.fChain->GetEntries();
   if (maxEntries<0) maxEntries=nEntries;
 
   DijetRespCorrDatumExtended_t *datum= new DijetRespCorrDatumExtended_t();
