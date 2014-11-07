@@ -534,7 +534,7 @@ TH1D* DijetRespCorrData::doFit_v2(const char* hname, const char* htitle,
   TH1D* histo=new TH1D(hname,htitle,NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
   for(int i=1; i<=NUMTOWERS; i++) {
     Double_t val, error;
-    xMinuit->GetParameter(i, val, error);
+    xMinuit->GetParameter(i-1, val, error);
     histo->SetBinContent(i, val);
     histo->SetBinError(i, error);
   }
