@@ -370,6 +370,10 @@ Int_t dijet_PFNtuple::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
+   tpfjet_twr_ieta->clear();
+   tpfjet_twr_iphi->clear();
+   ppfjet_twr_ieta->clear();
+   ppfjet_twr_iphi->clear();
    return fChain->GetEntry(entry);
 }
 Long64_t dijet_PFNtuple::LoadTree(Long64_t entry)
