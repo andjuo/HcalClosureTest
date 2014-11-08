@@ -287,7 +287,7 @@ int main()
     datum.SetTagEta(tjet_eta_);
     datum.SetTagPhi(tjet_phi_);
     for(int i=0; i<tjet_ntwrs_; i++){
-      if(tjet_twr_hade_->at(i) > 0.0 && (tjet_twr_clusterind_->at(i) || tjet_cluster_dR_->at(tjet_twr_clusterind_->at(i)))){
+      if(tjet_twr_hade_->at(i) > 0.0 && (tjet_twr_clusterind_->at(i) < 0 || tjet_cluster_dR_->at(tjet_twr_clusterind_->at(i)) < 0.5)){
 	datum.AddTagHcalE(tjet_twr_hade_->at(i)*tjet_twr_frac_->at(i),tjet_twr_ieta_->at(i));
 	sumt += tjet_twr_hade_->at(i)*tjet_twr_frac_->at(i);
       }
@@ -323,7 +323,7 @@ int main()
     datum.SetProbePhi(pjet_phi_);
     for(int i=0; i<pjet_ntwrs_; i++){
       //cout << pjet_twr_clusterind_->size() << " " << pjet_twr_clusterind_->at(i) << " " << pjet_cluster_n_ << endl;
-      if(pjet_twr_hade_->at(i) > 0.0 && (pjet_twr_clusterind_->at(i) || pjet_cluster_dR_->at(pjet_twr_clusterind_->at(i)))){
+      if(pjet_twr_hade_->at(i) > 0.0 && (pjet_twr_clusterind_->at(i) < 0 || pjet_cluster_dR_->at(pjet_twr_clusterind_->at(i)) < 0.5)){
 	datum.AddProbeHcalE(pjet_twr_hade_->at(i)*pjet_twr_frac_->at(i),pjet_twr_ieta_->at(i));
 	sump += pjet_twr_hade_->at(i)*pjet_twr_frac_->at(i);
       }
@@ -352,7 +352,7 @@ int main()
 	pjet_had_candNoRecHits_E += sqrt(pjet_candtrack_px_->at(pjet_had_candtrackind_->at(iHad))*pjet_candtrack_px_->at(pjet_had_candtrackind_->at(iHad)) + pjet_candtrack_py_->at(pjet_had_candtrackind_->at(iHad))*pjet_candtrack_py_->at(pjet_had_candtrackind_->at(iHad)) + pjet_candtrack_pz_->at(pjet_had_candtrackind_->at(iHad))*pjet_candtrack_pz_->at(pjet_had_candtrackind_->at(iHad))) - pjet_had_EcalE_->at(iHad);
       }
     }
-    datum.SetProbeEcalE(pjet_unkown_E_ + pjet_electron_E_ + pjet_muon_E_ + pjet_photon_E_ + pjet_had_EcalE_total);
+    datum.SetProbeEcalE(pjet_unkown_E_ + pjet_electron_E_ + pjet_muon_E_ + pjet_photon_E_ + pjet_had_EcalE_total + pjet_had_candNoRecHits_E);
 
     datum.SetThirdJetPx(thirdjet_px_);
     datum.SetThirdJetPy(thirdjet_py_);

@@ -173,7 +173,7 @@ class CalcRespCorrDiJets : public edm::EDAnalyzer {
   float calo_thirdjet_px_, calo_thirdjet_py_;
   int calo_Event_;
 
-  float tpfjet_pt_, tpfjet_p_, tpfjet_E_, tpfjet_eta_, tpfjet_phi_, tpfjet_scale_;
+  float tpfjet_pt_, tpfjet_p_, tpfjet_E_, tpfjet_eta_, tpfjet_phi_, tpfjet_emf_, tpfjet_scale_;
   float tpfjet_gendr_, tpfjet_genpt_, tpfjet_genp_, tpfjet_genE_;
   float tpfjet_EBE_, tpfjet_EEE_, tpfjet_HBE_, tpfjet_HEE_, tpfjet_HFE_;
   float tpfjet_unkown_E_, tpfjet_unkown_px_, tpfjet_unkown_py_, tpfjet_unkown_pz_, tpfjet_unkown_EcalE_;
@@ -191,7 +191,7 @@ class CalcRespCorrDiJets : public edm::EDAnalyzer {
   std::vector<float> tpfjet_cluster_eta_, tpfjet_cluster_phi_, tpfjet_cluster_dR_;
   int tpfjet_ncandtracks_;
   std::vector<float> tpfjet_candtrack_px_, tpfjet_candtrack_py_, tpfjet_candtrack_pz_, tpfjet_candtrack_EcalE_;
-  float ppfjet_pt_, ppfjet_p_, ppfjet_E_, ppfjet_eta_, ppfjet_phi_, ppfjet_scale_;
+  float ppfjet_pt_, ppfjet_p_, ppfjet_E_, ppfjet_eta_, ppfjet_phi_, ppfjet_emf_, ppfjet_scale_;
   float ppfjet_gendr_, ppfjet_genpt_, ppfjet_genp_, ppfjet_genE_;
   float ppfjet_EBE_, ppfjet_EEE_, ppfjet_HBE_, ppfjet_HEE_, ppfjet_HFE_;
   float ppfjet_unkown_E_, ppfjet_unkown_px_, ppfjet_unkown_py_, ppfjet_unkown_pz_, ppfjet_unkown_EcalE_;
