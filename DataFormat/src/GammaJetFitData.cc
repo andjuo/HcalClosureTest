@@ -14,7 +14,7 @@
 
 // ----------------------------------------------------------------
 
-TMinuit *xMinuit= NULL;
+TMinuit *myMinuit= NULL;
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
@@ -346,45 +346,45 @@ TH1D* GammaJetFitter_t::doFit(const char *histoName, const char *histoTitle,
   if (this->EstimateResolution()==Double_t(0)) return NULL;
 
   // Create the Minuit object
-  xMinuit = new TMinuit(corrArrSize);
-  xMinuit->SetPrintLevel(fPrintLevel);
-  xMinuit->SetErrorDef(fErrorDef);
-  xMinuit->SetFCN(gammaJet_FCN);
-  xMinuit->SetObjectFit(this);
+  myMinuit = new TMinuit(corrArrSize);
+  myMinuit->SetPrintLevel(fPrintLevel);
+  myMinuit->SetErrorDef(fErrorDef);
+  myMinuit->SetFCN(gammaJet_FCN);
+  myMinuit->SetObjectFit(this);
 
   // define the parameters
   for (int i=0; i<NUMTOWERS; i++) {
     int ieta= -MAXIETA + i;
-    xMinuit->DefineParameter(i, Form("Tower ieta: %d",ieta),
+    myMinuit->DefineParameter(i, Form("Tower ieta: %d",ieta),
 			     hcalCorrCf[i],
 			     fParStep, fParMin, fParMax);
     if (fixTowers &&
 	(std::find(fixTowers->begin(),fixTowers->end(), ieta) !=
 	 fixTowers->end())) {
       std::cout << " -- fix parameter\n";
-      xMinuit->FixParameter(i);
+      myMinuit->FixParameter(i);
     }
   }
 
   // scan the parameters
-  //xMinuit->mcscan();
+  //myMinuit->mcscan();
 
   // Minimize
-  xMinuit->Migrad();
+  myMinuit->Migrad();
 
   // return the results
   TH1D* histo=new TH1D(histoName,histoTitle,
 		       NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
   for(int i=1; i<=NUMTOWERS; i++) {
     Double_t val, error;
-    xMinuit->GetParameter(i-1, val, error);
+    myMinuit->GetParameter(i-1, val, error);
     histo->SetBinContent(i, val);
     histo->SetBinError(i, error);
   }
 
   for (unsigned int i=0; i<hcalCorrCf.size(); ++i) {
     Double_t val,error;
-    xMinuit->GetParameter(i, val,error);
+    myMinuit->GetParameter(i, val,error);
     hcalCorrCf[i]=val;
     if (int(i)>=NUMTOWERS) {
       std::cout << "spec param #" << i << " " << val << " +- " << error <<"\n";
@@ -424,7 +424,7 @@ void gammaJet_FCN(Int_t &npar, Double_t* gin, Double_t &f,
   if (0 && iflag) std::cout << "iflag=" << iflag << "\n";
   if (!gin) std::cout << "gin is NULL\n";
   const GammaJetFitter_t* fitter=
-    dynamic_cast<const GammaJetFitter_t*>(xMinuit->GetObjectFit());
+    dynamic_cast<const GammaJetFitter_t*>(myMinuit->GetObjectFit());
   TArrayD corrCf;
   int arrSize= fitter->GetParameterCount();
   corrCf.Set(arrSize, par);

@@ -37,7 +37,7 @@ const int NUMTOWERS = 83;
 // global variables and functions
 //
 
-extern TMinuit *xMinuit;
+extern TMinuit *myMinuit;
 
 extern void gammaJet_FCN(Int_t &npar, Double_t* gin, Double_t &f,
 			 Double_t *par, Int_t iflag);
