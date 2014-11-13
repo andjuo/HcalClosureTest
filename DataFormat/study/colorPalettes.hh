@@ -100,7 +100,8 @@ void set_center_white_style5(int nb=51) {
    Double_t Green[Number]  = { 0.50, 0.00, 1.00, 0.00, 0.90};
    Double_t Blue[Number]   = { 0.30, 0.60, 1.00, 0.00, 0.30};
    Double_t Length[Number] = { 0.00, 0.25, 0.50, 0.75, 1.00 };
-   TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb,0.9);
+   //TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb,0.9);
+   TColor::CreateGradientColorTable(Number,Length,Red,Green,Blue,nb);
    gStyle->SetNumberContours(nb);
 }
 
