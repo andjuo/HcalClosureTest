@@ -1,0 +1,10 @@
+file:selectionGPt170to300_5809400A.root
+file:selectionGPt170to300_A40C5492.root
+file:selectionGPt170to300_5846302F.root
+file:selectionGPt170to300_A80FB82E.root
+file:selectionGPt170to300_586126E2.root
+file:selectionGPt_50to80_12k.root
+file:selectionGPt_80to120_12k.root
+file:selectionGPt_120to170_12k.root
+file:selectionGPt_300to470_12k.root
+file:selectionGPt_470to800_3k.root
