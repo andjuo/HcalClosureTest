@@ -35,6 +35,18 @@ void printVec(const char *msg, const std::vector<T> &vec, int printEol=0) {
 
 // ---------------------------------------------------------
 
+template <class type_t>
+inline
+std::ostream& operator<<(std::ostream& out, const std::vector<type_t> *vec) {
+  out << " [" << vec->size() << "]: ";
+  for (unsigned int i=0; i<vec->size(); ++i) {
+    out << " " << (*vec)[i];
+  }
+  return out;
+}
+
+// ---------------------------------------------------------
+
 //------------------------------------------------------------------------------------------------------------------------
 
 inline
