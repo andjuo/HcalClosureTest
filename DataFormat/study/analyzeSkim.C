@@ -15,7 +15,7 @@ void analyzeSkim(Long64_t maxEntries=10) {
   assert(inpTree);
   inpTree->SetBranchAddress("dijet_data",&d);
 
-  const int plotBalanceVsCf=1;
+  const int plotBalanceVsCf=0;
   const int balanceKind=1; //  0 - original, 1 - met, 2 - metDivAvePt
 
   std::vector<Cuts_t*> cutV;
@@ -142,12 +142,25 @@ void analyzeSkim(Long64_t maxEntries=10) {
     hDiffRatioVsDeltaEotherV.push_back(h2);
   }
 
+  TH1D *h1TagJet_pfE_over_genE = new TH1D("h1TPFJet_pfE_over_genE",
+		 "Tag jet pfE/genE;E_{jet1}^{PF};E_{jet1}^{gen}",100,0.,2.);
+  TH1D *h1ProbeJet_pfE_over_genE = new TH1D("h1PPFJet_pfE_over_genE",
+		 "Probe jet pfE/genE;E_{jet1}^{PF};E_{jet1}^{gen}",100,0.,2.);
+  h1TagJet_pfE_over_genE->SetDirectory(0);
+  h1ProbeJet_pfE_over_genE->SetDirectory(0);
+
+  TH1D *h1TagJet_rhE_over_genE = new TH1D("h1TPFJet_rhE_over_genE",
+		 "Tag jet rhE/genE;E_{jet1}^{RH};E_{jet1}^{gen}",100,0.,2.);
+  TH1D *h1ProbeJet_rhE_over_genE = new TH1D("h1PPFJet_rhE_over_genE",
+		 "Probe jet rhE/genE;E_{jet1}^{RH};E_{jet1}^{gen}",100,0.,2.);
+  h1TagJet_rhE_over_genE->SetDirectory(0);
+  h1ProbeJet_rhE_over_genE->SetDirectory(0);
+
   // --------------------------------------
 
   DijetRespCorrData DRCD;
 
-
-  Long64_t nEntries= inpTree->GetEntriesFast();
+  Long64_t nEntries= inpTree->GetEntries();
   if (maxEntries<0) maxEntries=nEntries;
 
   for (Long64_t iEntry=0; (iEntry<nEntries) && (iEntry<maxEntries);
@@ -163,6 +176,30 @@ void analyzeSkim(Long64_t maxEntries=10) {
       }
       else d->PrintBaseClass(1);
     }
+
+    h1TagJet_pfE_over_genE->Fill(d->fTPFJetE/d->fTPFJetGenE, d->GetWeight());
+    h1ProbeJet_pfE_over_genE->Fill(d->fPPFJetE/d->fPPFJetGenE, d->GetWeight());
+    h1TagJet_rhE_over_genE->Fill(d->CalcRecHits_TagJetEn()/d->fTPFJetGenE, d->GetWeight());
+    h1ProbeJet_rhE_over_genE->Fill(d->CalcRecHits_ProbeJetEn()/d->fPPFJetGenE, d->GetWeight());
+
+    std::cout << "iEntry=" << iEntry << ", tag   jet genE=" << d->fTPFJetGenE << ", pfE=" << d->fTPFJetE << ", rhE=" << d->CalcRecHits_TagJetEn() << "\n";
+    std::cout << " -- " << d->fTJet_SumHadE << " + " << d->fTJet_SumHadOtherE << " + " << d->fTJet_SumNonHadOtherE << "\n";
+    std::map<Int_t,Double_t> hm;
+    hm.clear();
+    d->GetTagHcalE(hm);
+    for (std::map<Int_t,Double_t>::const_iterator it=hm.begin(); it!=hm.end(); it++) {
+      std::cout << " (" << it->first << "," << it->second << ")";
+    }
+    std::cout << "\n";
+    std::cout << "iEntry=" << iEntry << ", probe jet genE=" << d->fPPFJetGenE << ", pfE=" << d->fPPFJetE << ", rhE=" << d->CalcRecHits_ProbeJetEn() << "\n";
+    std::cout << " -- " << d->fPJet_SumHadE << " + " << d->fPJet_SumHadOtherE << " + " << d->fPJet_SumNonHadOtherE << "\n";
+    hm.clear();
+    d->GetProbeHcalE(hm);
+    for (std::map<Int_t,Double_t>::const_iterator it=hm.begin(); it!=hm.end(); it++) {
+      std::cout << " (" << it->first << "," << it->second << ")";
+    }
+    std::cout << "\n";
+
 
     for (unsigned int iCut=0; iCut<cutV.size(); ++iCut) {
       if (cutV[iCut]->passCuts(*d)) {
@@ -284,6 +321,30 @@ void analyzeSkim(Long64_t maxEntries=10) {
       hTowBalance_iTow_V[i]->Draw("LPE");
       ct->Update();
     }
+  }
+
+  if (1) {
+    TString canvName="canv_tag_pfE_over_genE";
+    TCanvas *ctag=new TCanvas(canvName,canvName,600,600);
+    h1TagJet_pfE_over_genE->Draw("hist");
+    ctag->Update();
+
+    canvName="canv_probe_pfE_over_genE";
+    TCanvas *cprobe=new TCanvas(canvName,canvName,600,600);
+    h1ProbeJet_pfE_over_genE->Draw("hist");
+    cprobe->Update();
+  }
+
+  if (1) {
+    TString canvName="canv_tag_rhE_over_genE";
+    TCanvas *ctag=new TCanvas(canvName,canvName,600,600);
+    h1TagJet_rhE_over_genE->Draw("hist");
+    ctag->Update();
+
+    canvName="canv_probe_rhE_over_genE";
+    TCanvas *cprobe=new TCanvas(canvName,canvName,600,600);
+    h1ProbeJet_rhE_over_genE->Draw("hist");
+    cprobe->Update();
   }
 }
 
