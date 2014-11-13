@@ -34,6 +34,8 @@
 #include <vector>
 #include <assert.h>
 
+#define __noRooFit
+
 #ifndef __noRooFit
 #include "RooGlobalFunc.h"
 #include "RooPlot.h"
