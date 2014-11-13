@@ -35,7 +35,7 @@ void checkBalance(int theCase=1, int imax=1, int targetEntry=-1) {
   inpData.ActivateBranches(brTargetVec);
   inpData.ActivateBranches(brAddVec);
 
-  Long64_t nentries = inpData.fChain->GetEntriesFast();
+  Long64_t nentries = inpData.fChain->GetEntries();
   if (nentries<=0) return;
   if (imax<0) imax=int(nentries);
 
