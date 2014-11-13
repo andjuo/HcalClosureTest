@@ -34,6 +34,7 @@ public :
    Float_t         tpfjet_E;
    Float_t         tpfjet_eta;
    Float_t         tpfjet_phi;
+   Float_t         tpfjet_emf;
    Float_t         tpfjet_scale;
    Float_t         tpfjet_genpt;
    Float_t         tpfjet_genp;
@@ -102,6 +103,7 @@ public :
    Float_t         ppfjet_E;
    Float_t         ppfjet_eta;
    Float_t         ppfjet_phi;
+   Float_t         ppfjet_emf;
    Float_t         ppfjet_scale;
    Float_t         ppfjet_genpt;
    Float_t         ppfjet_genp;
@@ -181,6 +183,7 @@ public :
    TBranch        *b_tpfjet_E;   //!
    TBranch        *b_tpfjet_eta;   //!
    TBranch        *b_tpfjet_phi;   //!
+   TBranch        *b_tpfjet_emf;   //!
    TBranch        *b_tpfjet_scale;   //!
    TBranch        *b_tpfjet_genpt;   //!
    TBranch        *b_tpfjet_genp;   //!
@@ -249,6 +252,7 @@ public :
    TBranch        *b_ppfjet_E;   //!
    TBranch        *b_ppfjet_eta;   //!
    TBranch        *b_ppfjet_phi;   //!
+   TBranch        *b_ppfjet_emf;   //!
    TBranch        *b_ppfjet_scale;   //!
    TBranch        *b_ppfjet_genpt;   //!
    TBranch        *b_ppfjet_genp;   //!
@@ -396,6 +400,7 @@ int dijet_PFNtuple::Init(const TString &fname)
     return 0;
   }
   fChain->Add(fname);
+  std::cout << "chain added the name " << fname << std::endl;
 
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -477,6 +482,7 @@ int dijet_PFNtuple::Init(const TString &fname)
    fChain->SetBranchAddress("tpfjet_E", &tpfjet_E, &b_tpfjet_E);
    fChain->SetBranchAddress("tpfjet_eta", &tpfjet_eta, &b_tpfjet_eta);
    fChain->SetBranchAddress("tpfjet_phi", &tpfjet_phi, &b_tpfjet_phi);
+   fChain->SetBranchAddress("tpfjet_emf", &tpfjet_emf, &b_tpfjet_emf);
    fChain->SetBranchAddress("tpfjet_scale", &tpfjet_scale, &b_tpfjet_scale);
    fChain->SetBranchAddress("tpfjet_genpt", &tpfjet_genpt, &b_tpfjet_genpt);
    fChain->SetBranchAddress("tpfjet_genp", &tpfjet_genp, &b_tpfjet_genp);
@@ -545,6 +551,7 @@ int dijet_PFNtuple::Init(const TString &fname)
    fChain->SetBranchAddress("ppfjet_E", &ppfjet_E, &b_ppfjet_E);
    fChain->SetBranchAddress("ppfjet_eta", &ppfjet_eta, &b_ppfjet_eta);
    fChain->SetBranchAddress("ppfjet_phi", &ppfjet_phi, &b_ppfjet_phi);
+   fChain->SetBranchAddress("ppfjet_emf", &ppfjet_emf, &b_ppfjet_emf);
    fChain->SetBranchAddress("ppfjet_scale", &ppfjet_scale, &b_ppfjet_scale);
    fChain->SetBranchAddress("ppfjet_genpt", &ppfjet_genpt, &b_ppfjet_genpt);
    fChain->SetBranchAddress("ppfjet_genp", &ppfjet_genp, &b_ppfjet_genp);
