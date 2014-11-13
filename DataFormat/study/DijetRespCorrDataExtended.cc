@@ -16,6 +16,7 @@ DijetRespCorrDatumExtended_t::DijetRespCorrDatumExtended_t() :
 {
   if (!__allocate())
     std::cout << "error in DijetRespCorrDatumExtended_t" << std::endl;
+  else this->Clear();
 }
 
 // ----------------------------------------------------------------
@@ -25,6 +26,7 @@ DijetRespCorrDatumExtended_t::DijetRespCorrDatumExtended_t(const DijetRespCorrDa
 {
   if (!__allocate())
     std::cout << "error in DijetRespCorrDatumExtended_t" << std::endl;
+  std::cout << "DijetRespCorrDatumExtended_t(same) lacks full copying\n";
 }
 
 // ----------------------------------------------------------------
@@ -103,6 +105,10 @@ void DijetRespCorrDatumExtended_t::Clear() {
   fPJet_SumHadE=-999;
   fPJet_SumHadOtherE=-999;
   fPJet_SumNonHadOtherE=-999;
+  fTPFJetGenE=0;
+  fTPFJetGenPt=0;
+  fPPFJetGenE=0;
+  fPPFJetGenPt=0;
   fTPfJet_had_twr_ieta->clear();
   fTPfJet_had_twr_iphi->clear();
   fTPfJet_had_twr_hade->clear();
@@ -205,7 +211,7 @@ void DijetRespCorrDatumExtended_t::SetJetTowers
   for (unsigned int iTwr=0; iTwr<vec_twr_iEta.size(); iTwr++) {
     const int ci=vec_twr_ClusterInd[iTwr];
     if ((vec_twr_hadE[iTwr]>0.) &&
-	(ci || (vec_ci_Cluster_dR[ci]<0.5))) {
+	((ci<0) || (vec_ci_Cluster_dR[ci]<0.5))) {
       double term= vec_twr_hadE[iTwr] * vec_twr_frac[iTwr];
       sumHE += term;
       if (tagJet==1) this->AddTagHcalE( term, vec_twr_iEta[iTwr] );
@@ -215,9 +221,7 @@ void DijetRespCorrDatumExtended_t::SetJetTowers
 
   double sumOE=0., sumENoRecHits=0.;
   for (unsigned int iHad=0; iHad<vec_had_EcalE.size(); ++iHad) {
-    if ( vec_had_Id[iHad] < 2 ) {
-      sumOE += vec_had_EcalE[iHad];
-    }
+    sumOE += vec_had_EcalE[iHad];
     const int candTrackIdx=vec_had_candtrackind[iHad];
     double corrTerm=0;
     if ( (vec_had_nTwrs[iHad]==0) && (candTrackIdx>-1)) {
@@ -258,6 +262,15 @@ void DijetRespCorrDatumExtended_t::SetJetTowers
     (*fPPfJet_had_twr_frac) = vec_twr_frac;
     (*fPPfJet_had_EcalE) = vec_had_EcalE;
   }
+}
+
+// ----------------------------------------------------------------------
+
+void DijetRespCorrDatumExtended_t::SetGenInfo
+    (Float_t lead_genE, Float_t lead_genPt,
+     Float_t sublead_genE, Float_t sublead_genPt) {
+  fTPFJetGenE = lead_genE; fTPFJetGenPt = lead_genPt;
+  fPPFJetGenE = sublead_genE; fPPFJetGenPt = sublead_genPt;
 }
 
 // ----------------------------------------------------------------------
@@ -331,6 +344,9 @@ std::ostream& operator<<(std::ostream& out,
   out << "     sumHadE=" << d.fPJet_SumHadE
       << ", sumHadOtherE=" << d.fPJet_SumHadOtherE
       << ", sumNonHadOtherE=" << d.fPJet_SumNonHadOtherE << "\n";
+  out << "     jet1 genE=" << d.fTPFJetGenE << ", genPt="
+      << d.fTPFJetGenPt << ", jet2: " << d.fPPFJetGenE << ", genPt="
+      << d.fPPFJetGenPt << "\n";
   printVec("tagJet had_twr_ieta ", *d.fTPfJet_had_twr_ieta);
   printVec("tagJet had_twr_iphi ", *d.fTPfJet_had_twr_iphi);
   printVec("tagJet had_twr_hade ", *d.fTPfJet_had_twr_hade);

@@ -22,6 +22,8 @@ class DijetRespCorrDatumExtended_t : public DijetRespCorrDatum {
   Float_t fPPFJetE, fPPFJetP;
   Float_t fTJet_SumHadE, fTJet_SumHadOtherE, fTJet_SumNonHadOtherE;
   Float_t fPJet_SumHadE, fPJet_SumHadOtherE, fPJet_SumNonHadOtherE;
+  Float_t fTPFJetGenE, fTPFJetGenPt;
+  Float_t fPPFJetGenE, fPPFJetGenPt;
   std::vector<int> *fTPfJet_had_twr_ieta;
   std::vector<int> *fTPfJet_had_twr_iphi;
   std::vector<float> *fTPfJet_had_twr_hade;
@@ -116,6 +118,9 @@ class DijetRespCorrDatumExtended_t : public DijetRespCorrDatum {
 		    const std::vector<float> &vec_cti_candtrack_py,
 		    const std::vector<float> &vec_cti_candtrack_pz
 		    );
+
+  void SetGenInfo(Float_t lead_genE, Float_t lead_genPt,
+		  Float_t sublead_genE, Float_t sublead_genPt);
 
   int PassCuts(double minSumJetEt=40, double minJetEt=20,
 	       double maxThirdJetEt=15, double maxDeltaEta=0.5,
