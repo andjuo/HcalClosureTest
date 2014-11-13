@@ -6,11 +6,12 @@
 
 void skimmer(Long64_t maxEntries=10) {
 
-  dijet_PFNtuple inpData;
+  //dijet_PFNtuple inpData("dijet_tree.root");
+  dijet_PFNtuple inpData("dijet_tree_5809400A.root");
   inpData.DeactivateBranches();
 
   std::vector<TString> tagV;
-  tagV.reserve(10);
+  tagV.reserve(30);
 
   tagV.push_back("tpfjet_E");
   tagV.push_back("tpfjet_p");
@@ -35,6 +36,8 @@ void skimmer(Long64_t maxEntries=10) {
   tagV.push_back("tpfjet_twr_iphi");
   tagV.push_back("tpfjet_twr_clusterind");
   tagV.push_back("tpfjet_cluster_dR");
+  tagV.push_back("tpfjet_genE");
+  tagV.push_back("tpfjet_genpt");
   
   tagV.push_back("tpfjet_cluster_eta");
   tagV.push_back("tpfjet_cluster_phi");
@@ -95,8 +98,8 @@ void skimmer(Long64_t maxEntries=10) {
       inpData.ppfjet_unkown_E + inpData.ppfjet_electron_E +
       inpData.ppfjet_muon_E + inpData.ppfjet_photon_E;
 
-    if (!datum->PassCuts()) continue;
-    else std::cout << "passed iEntry=" << iEntry << "\n";
+    if (0 &&  !datum->PassCuts()) continue;
+    //else std::cout << "passed iEntry=" << iEntry << "\n";
     passedCount++;
 
     datum->SetJetTowers(1,
@@ -129,6 +132,32 @@ void skimmer(Long64_t maxEntries=10) {
 			*inpData.ppfjet_candtrack_px,
 			*inpData.ppfjet_candtrack_py,
 			*inpData.ppfjet_candtrack_pz);
+
+    datum->SetGenInfo(inpData.tpfjet_genE,inpData.tpfjet_genpt,
+		      inpData.ppfjet_genE,inpData.ppfjet_genpt);
+
+    const int gen_debug=2;
+    if (gen_debug==1) {
+      std::cout << "iEntry=" << iEntry << ", ppfjet_genE=" << inpData.ppfjet_genE << "\n";
+      std::cout << "  ppfjet_twr_ieta " << inpData.ppfjet_twr_ieta << "\n";
+      std::cout << "  ppfjet_twr_hade " << inpData.ppfjet_twr_hade << "\n";
+      std::cout << "  ppfjet_twr_frac " << inpData.ppfjet_twr_frac << "\n";
+      std::cout << "  ppfjet_twr_clusterind " << inpData.ppfjet_twr_clusterind << "\n";
+      std::cout << "  ppfjet_cluster_dR " << inpData.ppfjet_cluster_dR << "\n";
+    }
+    else if (gen_debug==2) {
+      int reverse= (inpData.tpfjet_genE < inpData.ppfjet_genE) ? 1:0;
+      for (int iLoop=0; iLoop<2; iLoop++) {
+	if (((iLoop==0) && !reverse) ||
+	    ((iLoop==1) &&  reverse)) {
+	  std::cout << "genE=" << inpData.tpfjet_genE << ", pfE=" << inpData.tpfjet_E << ", rhE=" << datum->CalcRecHits_TagJetEn() << "\n";
+	}
+	else {
+	  std::cout << "genE=" << inpData.ppfjet_genE << ", pfE=" << inpData.ppfjet_E << ", rhE=" << datum->CalcRecHits_ProbeJetEn() << "\n";
+	}
+      }
+    }
+
 
     if (maxEntries!=nEntries) {
       if (0) {
