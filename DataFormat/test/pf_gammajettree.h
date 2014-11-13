@@ -22,6 +22,8 @@
 
 //extern const int MAXIETA = 41;
 
+typedef enum { _notJet=0, _leadJet=1, _subleadJet=2 } TJetId_t;
+
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
 class pf_gammajettree {
@@ -437,6 +439,16 @@ public :
    void ActivateBranches_forRecHitsEnergyCalc();
    void ActivateBranches_forFitSkim();
    void ActivateBranches_genBasicSet();
+   void ActivateBranches_jetID(int leadingJet=1);
+
+   // Added tests
+   int passTightJetID(int leadingJet=1) const;
+   int passPhotonJetRequirements(int theSet=2) const;
+
+   int passCuts(int leadingJet=1, int theSet=2) const {
+     return (passTightJetID(leadingJet) &&
+	     passPhotonJetRequirements(theSet)) ? 1:0;
+   }
 
    friend
      std::ostream& operator<<(std::ostream &out, pf_gammajettree &obj) {
@@ -446,10 +458,48 @@ public :
    }
 
    void PrintSelectedFields(int selection=0);
+   // numeric jet identifiers
    Double_t getSumEcalE(int tag, int includeOthers=1) const;
    Double_t getSumHcalE_trackDiffEcal(int leadingJet=1) const;
    std::map<Int_t,Double_t> getHcalEMap(int leadingJet=1,
 					double thrContrib=1e-4) const;
+
+   // logical jet identifiers
+   Double_t getSumEcalE_id(TJetId_t tag, int includeOthers=1) const {
+     double val=-999.;
+     switch(tag) {
+     case _notJet: val=getSumEcalE(1,includeOthers); break;
+     case _leadJet: val=getSumEcalE(0,includeOthers); break;
+     case _subleadJet: val=getSumEcalE(2,includeOthers); break;
+     default: std::cout << "getSumEcalE_id: not ready for tag=" << tag << "\n";
+     }
+     return val;
+   }
+
+   Double_t getSumHcalE_trackDiffEcal_id(TJetId_t jetId=_leadJet) const {
+     const char *fncname="getSumHcalE_trackDiffEcal_id";
+     double val=-999;
+     switch(jetId) {
+     case _notJet: std::cout << fncname << " bad jetId\n"; break;
+     case _leadJet: val= getSumHcalE_trackDiffEcal(1); break;
+     case _subleadJet: val= getSumHcalE_trackDiffEcal(0); break;
+     default: std::cout << fncname << ": not ready for jetId=" << jetId << "\n";
+     }
+     return val;
+   }
+
+   std::map<Int_t,Double_t> getHcalEMap_id(TJetId_t jetId= _leadJet,
+					double thrContrib=1e-4) const {
+     const char *fncname="getHcalEMap_id";
+     std::map<Int_t,Double_t> map;
+     switch(jetId) {
+     case _notJet: std::cout << fncname << " bad jetId\n"; break;
+     case _leadJet: map=getHcalEMap(1,thrContrib); break;
+     case _subleadJet: map=getHcalEMap(0,thrContrib); break;
+     default: std::cout << fncname << ": not ready for jetId=" << jetId << "\n";
+     }
+     return map;
+   }
 
 };
 
@@ -580,6 +630,49 @@ int pf_gammajettree::Init(const TString &fname)
    pfjet2_candtrack_py = 0;
    pfjet2_candtrack_pz = 0;
    pfjet2_candtrack_EcalE = 0;
+
+   // clear variables
+   RunNumber=LumiBlock=EventNumber=0;
+   EventWeight=rho2012=tagPho_pt=pho_2nd_pt=0;
+   tagPho_energy=tagPho_eta=tagPho_phi=tagPho_sieie=0;
+   tagPho_HoE=tagPho_r9=0;
+   tagPho_EcalIsoDR04=tagPho_HcalIsoDR04=tagPho_HcalIsoDR0412=0;
+   tagPho_TrkIsoHollowDR04=tagPho_pfiso_myphoton03=tagPho_pfiso_myneutral03=0;
+   tagPho_pixelSeed=tagPho_ConvSafeEleVeto=0;
+   tagPho_idTight=tagPho_idLoose=0;
+   tagPho_genPt=tagPho_genEnergy=0;
+   tagPho_genEta=tagPho_genPhi=tagPho_genDeltaR=0;
+   nPhotons=nGenJets=nPFJets=0;
+   ppfjet_pt=ppfjet_p=ppfjet_E=ppfjet_eta=ppfjet_phi=ppfjet_scale=0;
+   ppfjet_NeutralHadronFrac=ppfjet_NeutralEMFrac=0;
+   ppfjet_nConstituents=0;
+   ppfjet_ChargedHadronFrac=ppfjet_ChargedMultiplicity=ppfjet_ChargedEMFrac=0;
+   ppfjet_genpt=ppfjet_genp=ppfjet_genE=ppfjet_gendr=0;
+   ppfjet_unkown_E=ppfjet_electron_E=ppfjet_muon_E=ppfjet_photon_E=0;
+   ppfjet_unkown_px=ppfjet_electron_px=ppfjet_muon_px=ppfjet_photon_px=0;
+   ppfjet_unkown_py=ppfjet_electron_py=ppfjet_muon_py=ppfjet_photon_py=0;
+   ppfjet_unkown_pz=ppfjet_electron_pz=ppfjet_muon_pz=ppfjet_photon_pz=0;
+   ppfjet_unkown_EcalE=ppfjet_electron_EcalE=0;
+   ppfjet_muon_EcalE=ppfjet_photon_EcalE=0;
+   ppfjet_unkown_n=ppfjet_electron_n=ppfjet_muon_n=ppfjet_photon_n=0;
+   ppfjet_had_n=ppfjet_ntwrs=ppfjet_cluster_n=ppfjet_ncandtracks=0;
+   pfjet2_pt=pfjet2_p=pfjet2_E=pfjet2_eta=pfjet2_phi=pfjet2_scale=0;
+   pfjet2_NeutralHadronFrac=pfjet2_NeutralEMFrac=0;
+   pfjet2_nConstituents=0;
+   pfjet2_ChargedHadronFrac=pfjet2_ChargedMultiplicity=pfjet2_ChargedEMFrac=0;
+   pfjet2_genpt=pfjet2_genp=pfjet2_genE=pfjet2_gendr=0;
+   pfjet2_unkown_E=pfjet2_electron_E=pfjet2_muon_E=pfjet2_photon_E=0;
+   pfjet2_unkown_px=pfjet2_electron_px=pfjet2_muon_px=pfjet2_photon_px=0;
+   pfjet2_unkown_py=pfjet2_electron_py=pfjet2_muon_py=pfjet2_photon_py=0;
+   pfjet2_unkown_pz=pfjet2_electron_pz=pfjet2_muon_pz=pfjet2_photon_pz=0;
+   pfjet2_unkown_EcalE=pfjet2_electron_EcalE=0;
+   pfjet2_muon_EcalE=pfjet2_photon_EcalE=0;
+   pfjet2_unkown_n=pfjet2_electron_n=pfjet2_muon_n=pfjet2_photon_n=0;
+   pfjet2_had_n=pfjet2_ntwrs=pfjet2_cluster_n=pfjet2_ncandtracks=0;
+   pf_thirdjet_et=pf_thirdjet_pt=pf_thirdjet_p=0;
+   pf_thirdjet_px=pf_thirdjet_py=pf_thirdjet_E=0;
+   pf_thirdjet_eta=pf_thirdjet_phi=pf_thirdjet_scale=0;
+
    // Set branch addresses and branch pointers
    //if (!tree) return;
    //fChain = tree;
