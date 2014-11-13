@@ -64,12 +64,14 @@ TArrayD convert(const std::vector<Double_t> &vec) {
 void GammaJetEventAuxInfo_t::Assign(const GammaJetEventAuxInfo_t &e) {
   fEventNo=e.fEventNo;
   fRunNo=e.fRunNo;
+  fProbeHcalENoRecHits=e.fProbeHcalENoRecHits;
 }
 
 // ----------------------------------------------------------------
 
 std::ostream& operator<<(std::ostream& out, const GammaJetEventAuxInfo_t &e) {
   out << "eventNo=" << e.fEventNo << ", runNo=" << e.fRunNo;
+  out << " hcalENoRecHits=" << e.fProbeHcalENoRecHits;
   return out;
 }
 

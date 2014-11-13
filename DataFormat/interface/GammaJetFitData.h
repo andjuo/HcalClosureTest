@@ -96,23 +96,27 @@ Double_t calc_CorrHcalE(const TArrayD &hcalECorrCf,
 class GammaJetEventAuxInfo_t : public TObject {
 protected:
   Int_t fEventNo, fRunNo;
+  Double_t fProbeHcalENoRecHits;
 public:
 
   GammaJetEventAuxInfo_t(Int_t eventNo=-1, Int_t runNo=-1)
-    : fEventNo(eventNo), fRunNo(runNo)
+    : fEventNo(eventNo), fRunNo(runNo),
+    fProbeHcalENoRecHits(0.)
   {}
 
   GammaJetEventAuxInfo_t(const GammaJetEventAuxInfo_t &e) :
     TObject(e),
     fEventNo(e.fEventNo),
-    fRunNo(e.fRunNo)
+    fRunNo(e.fRunNo),
+    fProbeHcalENoRecHits(e.fProbeHcalENoRecHits)
   {}
 
   Int_t GetEventNo() const { return fEventNo; }
   void SetEventNo(Int_t no) { fEventNo=no; }
   Int_t GetRunNo() const { return fRunNo; }
   void SetRunNo(Int_t no) { fRunNo=no; }
-
+  Double_t GetProbeHcalENoRecHits() const { return fProbeHcalENoRecHits; }
+  void SetProbeHcalENoRecHits(Double_t val) { fProbeHcalENoRecHits=val; }
 
   void Assign(const GammaJetEventAuxInfo_t &e);
 
@@ -195,6 +199,13 @@ class GammaJetEvent_t : public TObject
   const GammaJetEventAuxInfo_t& GetAuxInfo() const { return fAInfo; }
   void SetAuxInfo(const GammaJetEventAuxInfo_t &aux) { fAInfo=aux; }
 
+  Double_t GetProbeEtot_ExcludePureTrackHadrons() const
+  { return (fProbeE - fAInfo.GetProbeHcalENoRecHits()); }
+  Double_t GetProbeETtot_ExcludePureTrackHadrons() const
+  { return GetProbeEtot_ExcludePureTrackHadrons()/cosh(fProbeEta); }
+  Double_t CalcDiffEt_ExcludePureTrackHadrons() const
+  { return (fTagEt - GetProbeETtot_ExcludePureTrackHadrons()); }
+
   //
   // calculations
   //
@@ -274,6 +285,7 @@ class GammaJetFitter_t : public TObject {
   { fData.push_back(new GammaJetEvent_t(e)); }
 
   const GammaJetEvent_t& GetAt(Int_t idx) const { return *fData.at(idx); }
+  const GammaJetEvent_t* GetPtrAt(Int_t idx) const { return fData.at(idx); }
   const std::vector<GammaJetEvent_t*>& GetData() const { return fData; }
   Int_t GetSize() const { return Int_t(fData.size()); }
   Int_t GetParameterCount() const { return NUMTOWERS; }
