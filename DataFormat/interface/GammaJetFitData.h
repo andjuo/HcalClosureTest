@@ -48,6 +48,18 @@ std::ostream& operator<<(std::ostream& out, const std::map<Int_t,Double_t> &m);
 std::ostream& operator<<(std::ostream& out, const std::vector<Double_t> &vec);
 std::ostream& operator<<(std::ostream& out, const TArrayD &arr);
 
+// ---------------------------------------------------------
+
+template <class type_t>
+inline
+std::ostream& operator<<(std::ostream& out, const std::vector<type_t> *vec) {
+  out << " [" << vec->size() << "]: ";
+  for (unsigned int i=0; i<vec->size(); ++i) {
+    out << " " << (*vec)[i];
+  }
+  return out;
+}
+
 // --------------------------------------------------------
 
 inline
@@ -181,6 +193,7 @@ class GammaJetEvent_t : public TObject
   Double_t GetProbeEcalE() const { return fProbeEcalE; }
   Double_t GetProbeHcalE(Int_t ieta) const; // slower: uses iterator!
   const std::map<Int_t,Double_t>& GetProbeHcalE() const { return fProbeHcalE; }
+  Double_t CalcProbeHcalEtot() const { return calc_HcalE(fProbeHcalE); }
   void SetProbeEtaPhiEn(double valEta, double valPhi, double valEcalE,
 			const std::map<Int_t,Double_t> &valHcalE);
 
