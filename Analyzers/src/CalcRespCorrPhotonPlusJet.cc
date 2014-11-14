@@ -57,15 +57,15 @@ inline void HERE(const char *msg, const T& x) {
 
 // -------------------------------------------------
 
-void printElementsInBlocks(const PFCandidate& cand,
+void printElementsInBlocks(const reco::PFCandidate& cand,
                            std::ostream& out=std::cout)  {
   if(!out) return;
-  PFBlockRef firstRef;
+  reco::PFBlockRef firstRef;
   assert(!cand.elementsInBlocks().empty() );
   out << cand << "\n";
   for(unsigned i=0; i<cand.elementsInBlocks().size(); i++) {
     HERE("iBlock=",i);
-    PFBlockRef blockRef = cand.elementsInBlocks()[i].first;
+    reco::PFBlockRef blockRef = cand.elementsInBlocks()[i].first;
     if(blockRef.isNull()) {
       cerr<<"ERROR! no block ref!";
       continue;

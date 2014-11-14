@@ -13,9 +13,9 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/ESHandle.h"
-#include "RecoEgamma/EgammaTools/interface/ggPFClusters.h"
-#include "RecoEgamma/EgammaTools/interface/ggPFESClusters.h"
-#include "RecoEgamma/EgammaTools/interface/ggPFTracks.h"
+//#include "RecoEgamma/EgammaTools/interface/ggPFClusters.h"
+//#include "RecoEgamma/EgammaTools/interface/ggPFESClusters.h"
+//#include "RecoEgamma/EgammaTools/interface/ggPFTracks.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h"
