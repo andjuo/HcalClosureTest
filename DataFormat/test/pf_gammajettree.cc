@@ -145,7 +145,7 @@ int pf_gammajettree::passTightJetID(int leadingJet) const {
       if (pfjet2_ChargedEMFrac >= 0.99) flag|=32;
     }
   }
-  if (1 && (flag!=0)) std::cout << "passTightJetID failed: "
+  if (0 && (flag!=0)) std::cout << "passTightJetID failed: "
 	     << explain_failingTightJetIDFlag(flag,leadingJet,*this) << "\n";
   return (flag==0) ? 1:0;
 }
@@ -190,7 +190,7 @@ int pf_gammajettree::passPhotonJetRequirements(int theSet) const {
     if (tagPho_idTight==0) flag|=32;
   }
   //if (tagPho_pixelSeed != 0) flag|=64;
-  if (1 && (flag!=0)) std::cout << "passPhotonJetRequirements failed: "
+  if (0 && (flag!=0)) std::cout << "passPhotonJetRequirements failed: "
 			<< explain_failingPhotonJetFlag(flag,*this) << "\n";
   return (flag==0) ? 1:0;
 }
