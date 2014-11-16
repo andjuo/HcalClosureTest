@@ -336,12 +336,13 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   edm::Handle<reco::VertexCollection> vtxHandle;
   iEvent.getByLabel("offlinePrimaryVertices", vtxHandle);
 
-  edm::Handle<reco::GsfElectronCollection> gsfElectronHandle;
-  iEvent.getByLabel("gsfElectrons", gsfElectronHandle);
+  //edm::Handle<reco::GsfElectronCollection> gsfElectronHandle;
+  //iEvent.getByLabel("gsfElectrons", gsfElectronHandle);
 
-  edm::Handle<double> rhoHandle_2012;
-  iEvent.getByLabel(rhoCollection_, rhoHandle_2012);
-  rho2012_ = *(rhoHandle_2012.product());
+  //edm::Handle<double> rhoHandle_2012;
+  //iEvent.getByLabel(rhoCollection_, rhoHandle_2012);
+  //rho2012_ = *(rhoHandle_2012.product());
+  rho2012_ = -1e6;
 
   ///  std::cout << "getting convH" << std::endl;
   edm::Handle<reco::ConversionCollection> convH;
@@ -441,7 +442,8 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   tagPho_pfiso_myneutral03_ = pfHcalIso(photon_tag.photon(), pfHandle, 0.3, 0.0, reco::PFCandidate::h0);
   tagPho_pfiso_mycharged03.push_back(pfTkIsoWithVertex(photon_tag.photon(), pfHandle, vtxHandle, 0.3, 0.02, 0.02, 0.0, 0.2, 0.1, reco::PFCandidate::h));
 
-  tagPho_ConvSafeEleVeto_ = ((int)ConversionTools::hasMatchedPromptElectron(photon_tag.photon()->superCluster(), gsfElectronHandle, convH, beamSpotHandle->position()));
+  //tagPho_ConvSafeEleVeto_ = ((int)ConversionTools::hasMatchedPromptElectron(photon_tag.photon()->superCluster(), gsfElectronHandle, convH, beamSpotHandle->position()));
+  tagPho_ConvSafeEleVeto_ = -999;
 
   edm::Ref<reco::PhotonCollection> photonRef(photons, photon_tag.idx());
   tagPho_idLoose_ = (loosePhotonQual.isValid()) ? (*loosePhotonQual)[photonRef] : -1;
