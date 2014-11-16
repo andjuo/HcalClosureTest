@@ -19,7 +19,7 @@ process.load('JetMETCorrections.Configuration.JetCorrectionProducers_cff')
 process.load('JetMETCorrections.Configuration.JetCorrectionServices_cff')
 
 # run over files
-process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_QCD.root')
+process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_RelValPhotonJets_5_3_14.root')
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
 process.calcrespcorrphotonplusjet.doGenJets = cms.bool(True)
@@ -28,6 +28,7 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring(
     'HLT_Photon50_CaloIdVL_IsoL','HLT_Photon75_CaloIdVL_IsoL',
     'HLT_Photon90_CaloIdVL_IsoL','HLT_Photon135',
     'HLT_Photon150','HLT_Photon160')
+#process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
 process.calcrespcorrphotonplusjet.pfJetCollName = cms.string('ak5PFJets')
 #process.calcrespcorrphotonplusjet.pfJetCollName = cms.string('ak5PFJetsL1') # L1 corrected jet? # needs production
 process.calcrespcorrphotonplusjet.pfJetCorrName = cms.string('ak5PFL2L3')
@@ -40,6 +41,8 @@ import FWCore.Utilities.FileUtils as FileUtils
 #listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
 #listFileName='selection_tmp.txt'
 listFileName='selection_keepAlive.txt'
+listFileName='fileInfo_pionGun.txt'
+listFileName='fileInfo_RelVal_5_3_14_PhotonJets.txt'
 mylist = FileUtils.loadListFromFile(listFileName)
 mylist.extend( FileUtils.loadListFromFile(listFileName) )
 readFiles = cms.untracked.vstring( *mylist )
@@ -49,7 +52,8 @@ readFiles = cms.untracked.vstring( *mylist )
 #  '/store/relval/CMSSW_5_3_14/RelValPhotonJets_Pt_10/GEN-SIM-RECO/START53_LV6-v1/00000/C82EE6E4-4D60-E311-8621-0025905A4964.root'
 #)
 
-readFiles=cms.untracked.vstring('file:selectionQCD.root')
+#readFiles=cms.untracked.vstring('file:selectionQCD.root')
+#readFiles=cms.untracked.vstring('file:/tmp/andriusj/data/piGammaPt50_10_RECO.root')
 
 ##process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring('/store/relval/CMSSW_5_3_16/RelValPyquen_GammaJet_pt20_2760GeV/GEN-SIM-RECO/PU_STARTHI53_LV1_mar03-v2/00000/20FE26F4-65A3-E311-B12C-0025904C6378.root'))
 
