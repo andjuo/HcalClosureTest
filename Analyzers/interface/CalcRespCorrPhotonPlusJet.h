@@ -182,6 +182,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   bool doCaloJets_;                 // use CaloJets
   bool doPFJets_;                   // use PFJets
   bool doGenJets_;                  // use GenJets
+  bool ignoreHLT_;
 
   // root file/histograms
   TFile* rootfile_;

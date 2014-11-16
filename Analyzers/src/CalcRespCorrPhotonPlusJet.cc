@@ -129,6 +129,8 @@ CalcRespCorrPhotonPlusJet::CalcRespCorrPhotonPlusJet(const edm::ParameterSet& iC
   doCaloJets_          = iConfig.getParameter<bool>("doCaloJets");
   doPFJets_            = iConfig.getParameter<bool>("doPFJets");
   doGenJets_           = iConfig.getParameter<bool>("doGenJets");
+  ignoreHLT_           = false;
+  if (iConfig.exists("ignoreHLT")) ignoreHLT_ = iConfig.getUntrackedParameter<bool>("ignoreHLT");
 
   // set it here to ensure the value is defined
   eventWeight_ = 1.0;
@@ -251,8 +253,8 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 
 
   // assign "trig fired" if no triggers are specified
-  bool photonTrigFlag= false;
-  bool jetTrigFlag= false;
+  bool photonTrigFlag= (photonTrigNamesV_.size()==0) ? true : false;
+  bool jetTrigFlag= (jetTrigNamesV_.size()==0) ? true : false;
   if ((photonTrigNamesV_.size()==1) &&
       (photonTrigNamesV_[0].length()==0)) photonTrigFlag=true;
   if ((jetTrigNamesV_.size()==1) &&
@@ -261,7 +263,6 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   // If needed, process trigger information
   if (!photonTrigFlag || !jetTrigFlag) {
     // check the triggers
-
     edm::Handle<edm::TriggerResults> triggerResults;
     if( !iEvent.getByLabel(edm::InputTag("TriggerResults::HLT"),triggerResults) ) {
       throw edm::Exception(edm::errors::ProductNotFound)
@@ -1781,22 +1782,45 @@ void CalcRespCorrPhotonPlusJet::beginRun(const edm::Run &iRun,
 					 const edm::EventSetup &setup)
 {
   //std::cout << "beginRun()" << std::endl;
-  if (debug_) std::cout <<"Initializing trigger information for individual run"<<std::endl;
-  bool changed(true);
-  std::string processName="HLT";
-  if (hltConfig_.init(iRun,setup,processName,changed)) {
-    // if init returns TRUE, initialisation has succeeded!
-    if (changed) {
-     // The HLT config has actually changed wrt the previous Run, hence rebook your
-     // histograms or do anything else dependent on the revised HLT config
+
+  if (!ignoreHLT_) {
+    int noPhotonTrigger= (photonTrigNamesV_.size()==0) ? 1:0;
+    int noJetTrigger= (jetTrigNamesV_.size()==0) ? 1:0;
+    if (!noPhotonTrigger &&
+	(photonTrigNamesV_.size()==1) &&
+	(photonTrigNamesV_[0].length()==0)) noPhotonTrigger=1;
+    if (!noJetTrigger &&
+	(jetTrigNamesV_.size()==1) &&
+	(jetTrigNamesV_[0].length()==0)) noJetTrigger=1;
+    if (noPhotonTrigger && noJetTrigger) {
+      ignoreHLT_=true;
+      std::cout << "HLT trigger ignored: no trigger requested\n";
     }
   }
   else {
-    // if init returns FALSE, initialisation has NOT succeeded, which indicates a problem
-    // with the file and/or code and needs to be investigated!
-    throw edm::Exception(edm::errors::ProductNotFound)
-      << " HLT config extraction failure with process name " << processName;
-    // In this case, all access methods will return empty values!
+    // clear trigger names, if needed
+    photonTrigNamesV_.clear();
+    jetTrigNamesV_.clear();
+  }
+
+  if (!ignoreHLT_) {
+    if (debug_) std::cout <<"Initializing trigger information for individual run"<<std::endl;
+    bool changed(true);
+    std::string processName="HLT";
+    if (hltConfig_.init(iRun,setup,processName,changed)) {
+      // if init returns TRUE, initialisation has succeeded!
+      if (changed) {
+	// The HLT config has actually changed wrt the previous Run, hence rebook your
+	// histograms or do anything else dependent on the revised HLT config
+      }
+    }
+    else {
+      // if init returns FALSE, initialisation has NOT succeeded, which indicates a problem
+      // with the file and/or code and needs to be investigated!
+      throw edm::Exception(edm::errors::ProductNotFound)
+	<< " HLT config extraction failure with process name " << processName;
+      // In this case, all access methods will return empty values!
+    }
   }
 }
 
