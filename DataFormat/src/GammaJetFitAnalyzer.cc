@@ -7,12 +7,15 @@
 #  include "HcalClosureTest/DataFormat/interface/GammaJetFitAnalyzer.h"
 #endif
 
+#include <TPaveStats.h>
+
 
 // ----------------------------------------------------
 
 TH2D* GammaJetFitAnalyzer_t::plot_EtVsEt(const char *hName, const char *hTitle,
 	const TArrayD *hcalCorrCf,
-	int nBins, double EtMin, double EtMax) const {
+	int nBins, double EtMin, double EtMax) const
+{
   TString hTitleMdf= hTitle + TString(";E_{T,tag};E_{T,probe}");
   TH2D* h2= new TH2D(hName,hTitleMdf,
 		     nBins,EtMin,EtMax,
@@ -30,6 +33,41 @@ TH2D* GammaJetFitAnalyzer_t::plot_EtVsEt(const char *hName, const char *hTitle,
     h2->Fill(eT_tag,eT_probe, w);
   }
   return h2;
+}
+
+// ----------------------------------------------------
+
+TH1D* GammaJetFitAnalyzer_t::plot_Energy
+   (const char *hName, const char *hTitle,
+    int tag, int transverse,
+    const TArrayD *hcalCorrCf,
+    int nBins, double EtMin, double EtMax) const
+{
+  TString xaxis=Form("E_{%s%s}",
+		     (transverse) ? "T," : "",
+		     (tag) ? "tag" : "probe");
+  TString hTitleMdf= hTitle +TString(Form(";%s;count",xaxis.Data()));
+  TH1D* h1= new TH1D(hName,hTitleMdf, nBins,EtMin,EtMax);
+  //h1->SetStats(0);
+  h1->SetDirectory(0);
+
+  for (unsigned int i=0; i<fData->size(); i++) {
+    const GammaJetEvent_t *e= fData->at(i);
+    double w= e->GetWeight();
+    double energy=0.;
+    if (tag) {
+      if (hcalCorrCf) energy= e->GetTagEtot(*hcalCorrCf);
+      else energy= e->GetTagEtot();
+      if (transverse) energy /= cosh(e->GetTagEta());
+    }
+    else {
+      if (hcalCorrCf) energy= e->GetProbeEtot(*hcalCorrCf);
+      else energy= e->GetProbeEtot();
+      if (transverse) energy /= cosh(e->GetProbeEta());
+    }
+    h1->Fill(energy, w);
+  }
+  return h1;
 }
 
 // ----------------------------------------------------
@@ -129,5 +167,87 @@ TH2D* GammaJetFitAnalyzer_t::plot_TowerFitProfile
 
   return h2;
 }
+
+// ----------------------------------------------------
+
+TH1D* GammaJetFitAnalyzer_t::plot_TowerEntryCount(
+                const char *hName, const char *hTitle,
+		int weighted,
+		double minWeight, int fractionFromMax,
+		std::vector<Double_t> *towers_ptr) const
+{
+  std::vector<Double_t> towerWeight;
+  std::vector<Int_t> emptyTowers;
+  if (towers_ptr) towers_ptr->clear();
+
+  if (!GetEmptyTowers(*fData,emptyTowers,weighted,
+		      minWeight,fractionFromMax,&towerWeight)) {
+    std::cout << "GammaJetFitAnalyzer_t::plot_TowerEntryCount: "
+	      << "failed to get weights\n";
+    return NULL;
+  }
+
+  TH1D *h1= new TH1D(hName,hTitle, NUMTOWERS+1, -MAXIETA-1, MAXIETA+1);
+  h1->SetDirectory(0);
+  h1->SetStats(0);
+
+  //std::cout << "towerWeight.size=" << towerWeight.size() << "\n";
+  for (unsigned int i=0; i<towerWeight.size(); ++i) {
+    int idx= i-MAXIETA;
+    //int idx_mirror= MAXIETA-i;
+    //int i_mirror= NUMTOWERS-i-1;
+    //std::cout << "i=" << i << ", idx=" << idx << ", w=" << towerWeight[i] << "\n";
+    //std::cout << ", chkSymmetry idx_mirror=" << idx_mirror << ", i_mirror="
+    //	      << i_mirror << "   "
+    //	      << towerWeight[i] << "\n";
+    h1->Fill( idx + 0.1 , towerWeight[i]);
+  }
+
+  if (towers_ptr) *towers_ptr= towerWeight;
+
+  return h1;
+}
+
+// ----------------------------------------------------
+// ----------------------------------------------------
+
+void plotTwoHistos(TCanvas *cx, TString title,
+		   TH1D* h1, TString label1, int color1, TString drawOpt1,
+		   TH1D* h2, TString label2, int color2, TString drawOpt2)
+{
+  cx->cd();
+
+  h1->SetLineColor(color1); h1->SetMarkerColor(color1);
+
+  if (1) { // change the title
+    TH1D *hTmp= (TH1D*)h1->Clone(h1->GetName() + TString("_tmp"));
+    hTmp->SetTitle(title);
+    hTmp->SetStats(0);
+    hTmp->Draw("LP");
+  }
+
+  h1->Draw(drawOpt1 + TString("sames"));
+  cx->Update();
+  TPaveStats *stats1= (TPaveStats*)cx->GetPrimitive("stats");
+  stats1->SetName(h1->GetName() + TString("_stats"));
+  stats1->SetY1NDC(.7);
+  stats1->SetY2NDC(.9);
+  stats1->SetTextColor(color1);
+
+  h2->SetLineColor(color2); h2->SetMarkerColor(color2);
+  h2->Draw(drawOpt2 + TString("sames"));
+  cx->Update();
+  TPaveStats *stats2= (TPaveStats*)cx->GetPrimitive("stats");
+  stats2->SetName(h2->GetName() + TString("_stats"));
+  stats2->SetY1NDC(.45);
+  stats2->SetY2NDC(.65);
+  stats2->SetTextColor(color2);
+  cx->Modified();
+  cx->Update();
+}
+
+
+
+// ----------------------------------------------------
 
 // ----------------------------------------------------

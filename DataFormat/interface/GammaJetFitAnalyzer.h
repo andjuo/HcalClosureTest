@@ -23,8 +23,12 @@ class GammaJetFitAnalyzer_t {
  public:
   TH2D* plot_EtVsEt(const char *hName, const char *hTitle,
 		    const TArrayD *hcalCorrCf=NULL,
-		    int nBins=100,
-		    double EtMin=0., double EtMax=1000) const;
+		    int nBins=100, double EtMin=0., double EtMax=1000) const;
+
+  TH1D* plot_Energy(const char *hName, const char *hTitle,
+		    int tag=0, int transverse=0,
+		    const TArrayD *hcalCorrCf=NULL,
+		    int nBins=100, double EtMin=0., double EtMax=1000) const;
 
   TH2D* plot_TowerEn(const char *hNameBase, const char *hTitle,
 		     unsigned int idxMin, unsigned int idxMax,
@@ -36,7 +40,20 @@ class GammaJetFitAnalyzer_t {
 			     int nBins=50,
 			     double cfMin=0., double cfMax=2.,
 			     const std::vector<double> *setCfs=NULL) const;
+
+  TH1D* plot_TowerEntryCount(const char *hName, const char *hTitle,
+			     int weighted,
+			     double minWeight=0., int fractionFromMax=1,
+			     std::vector<Double_t> *towers_ptr=NULL) const;
+
 };
+
+// --------------------------------------------------------------
+// --------------------------------------------------------------
+
+void plotTwoHistos(TCanvas *cx, TString title,
+		   TH1D* h1, TString label1, int color1, TString drawOpt1,
+		   TH1D* h2, TString label2, int color2, TString drawOpt2);
 
 // --------------------------------------------------------------
 
