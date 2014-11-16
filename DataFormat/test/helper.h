@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <vector>
+#include <TCanvas.h>
+#include <TString.h>
+#include <TSystem.h>
 
 // -----------------------------------------------
 
@@ -21,6 +24,26 @@ void printVec(const char *msg, const std::vector<T> &v) {
   }
   std::cout << std::endl;
   return ;
+}
+
+// -----------------------------------------------
+
+inline
+void SaveCanvas(TCanvas* canv, const TString &canvName, TString destDir="plots") {
+  gSystem->mkdir(destDir,kTRUE);
+  gSystem->mkdir(destDir+TString("/png"),kTRUE);
+  gSystem->mkdir(destDir+TString("/pdf"),kTRUE);
+  gSystem->mkdir(destDir+TString("/root"),kTRUE);
+
+  TString saveName=destDir+TString("/png/");
+  saveName+=canvName;
+  saveName+=".png";
+  canv->SaveAs(saveName);
+  saveName.ReplaceAll("png","pdf");
+  canv->SaveAs(saveName);
+  saveName.ReplaceAll("pdf","root");
+  canv->SaveAs(saveName);
+  return;
 }
 
 // -----------------------------------------------
