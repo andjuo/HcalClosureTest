@@ -20,6 +20,7 @@ process.load('JetMETCorrections.Configuration.JetCorrectionServices_cff')
 
 # run over files
 process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_RelValPhotonJets_5_3_14.root')
+
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
 process.calcrespcorrphotonplusjet.doGenJets = cms.bool(True)
@@ -29,6 +30,8 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring(
     'HLT_Photon90_CaloIdVL_IsoL','HLT_Photon135',
     'HLT_Photon150','HLT_Photon160')
 #process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
+
+# CMSSW 7_X_Y needs ak4 jets instead of ak5 jets!
 process.calcrespcorrphotonplusjet.pfJetCollName = cms.string('ak5PFJets')
 #process.calcrespcorrphotonplusjet.pfJetCollName = cms.string('ak5PFJetsL1') # L1 corrected jet? # needs production
 process.calcrespcorrphotonplusjet.pfJetCorrName = cms.string('ak5PFL2L3')
@@ -75,6 +78,7 @@ process.source = cms.Source("PoolSource",
 )
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.MessageLogger.cerr.threshold             = 'INFO'
 process.MessageLogger.cerr.FwkReport.reportEvery=cms.untracked.int32(1000)
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
