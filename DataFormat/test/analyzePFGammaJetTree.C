@@ -2,8 +2,16 @@
 #include "pf_gammajettree.h"
 #include <TH2D.h>
 #include <TCanvas.h>
+#include <TLine.h>
 //#include "colorPalettes.hh"
 #include "ComparisonPlot.hh"
+#include "helper.h"
+
+// ------------------------------------------------------
+
+#ifdef helper_HH
+  TString plotOutDir="plots";
+#endif
 
 // ------------------------------------------------------
 
@@ -21,7 +29,7 @@ inline void prepareHisto(TH2D *h) {
 // ------------------------------------------------------
 
 void displayHisto(TH1D* h, TString tag, TString drawOpt="LPE");
-void displayHisto(TH2D* h, TString tag, TString drawOpt="COLZ");
+void displayHisto(TH2D* h, TString tag, TString drawOpt="COLZ", int drawXeqY=1);
 void displayHistoRatio(TH1D *h1, TString label1, TH1D *h2, TString label2,
 		       TString xAxisLabel, TString yAxisLabel,
 		       TString tag,
@@ -32,7 +40,12 @@ void displayHistoRatio(TH1D *h1, TString label1, TH1D *h2, TString label2,
 
 void analyzePFGammaJetTree(TString inpFileName,
 			   Long64_t maxEntries=-1,
-			   double extraWeightFactor=-1.) {
+			   double extraWeightFactor=-1.,
+			   TString plotOutDir_user="") {
+
+#ifdef helper_HH
+  if (plotOutDir_user.Length()>0) plotOutDir= plotOutDir_user;
+#endif
 
   // book histograms
   double cPI= 4*atan(1);
@@ -83,7 +96,7 @@ void analyzePFGammaJetTree(TString inpFileName,
   h1_jet_energy_RHoverGen->SetStats(1);
 
 
-  int show_jet_energy_PF_over_Gen_divScale=1;
+  int show_jet_energy_PF_over_Gen_divScale=0; // this is not correct plot
   TH1D *h1_jet_energy_PFoverGen_divScale=
     new TH1D("h1_jet_energy_PFoverGen_divScale",
       "Jet energy ratio (PF/scale div gen);E_{PF}/E_{gen}/JEC_{scale};count",
@@ -321,13 +334,13 @@ void displayHisto(TH1D* h, TString tag, TString drawOpt) {
   c->Update();
 #ifdef helper_HH
   TString figName="fig-" + tag;
-  SaveCanvas(c,figName);
+  SaveCanvas(c,figName,plotOutDir);
 #endif
 }
 
 // ------------------------------------------------------
 
-void displayHisto(TH2D* h, TString tag, TString drawOpt) {
+void displayHisto(TH2D* h, TString tag, TString drawOpt, int drawXeqY) {
   TString canvName="c_" + tag;
   TCanvas *c=new TCanvas(canvName,canvName,600,600);
 #ifdef ColorPalettes_HH
@@ -336,10 +349,26 @@ void displayHisto(TH2D* h, TString tag, TString drawOpt) {
   h->GetYaxis()->SetTitleOffset(1.8);
 #endif
   h->Draw(drawOpt);
+  if (drawXeqY) {
+    c->Update();
+    Double_t xmin= c->GetUxmin();
+    Double_t xmax= c->GetUxmax();
+    Double_t ymin= c->GetUymin();
+    Double_t ymax= c->GetUymax();
+    if (xmin>ymin) ymin=xmin; else xmin=ymin;
+    if (xmax<ymax) xmax=ymax; else ymax=xmax;
+    if (xmin<xmax) {
+      TLine *line= new TLine(xmin,ymin,xmax,ymax);
+      line->Draw();
+    }
+    else {
+      std::cout << "\tcould not draw x=y line\n";
+    }
+  }
   c->Update();
 #ifdef helper_HH
   TString figName="fig-" + tag;
-  SaveCanvas(c,figName);
+  SaveCanvas(c,figName,plotOutDir);
 #endif
 }
 
