@@ -32,6 +32,15 @@ const int NUMTOWERS = 83;
 #endif
 
 // --------------------------------------------------------
+//
+// forward declarations
+//
+
+class GammaJetCuts_t;
+class GammaJetFitter_t;
+
+
+// --------------------------------------------------------
 
 //
 // global variables and functions
@@ -48,6 +57,24 @@ std::ostream& operator<<(std::ostream& out, const std::map<Int_t,Double_t> &m);
 std::ostream& operator<<(std::ostream& out, const std::vector<Double_t> &vec);
 std::ostream& operator<<(std::ostream& out, const TArrayD &arr);
 
+
+
+// -----------------------------------------------------------
+
+int LoadGammaJetEvents(const TString fname,
+		       const GammaJetCuts_t &cuts,
+		       GammaJetFitter_t &fitter,
+		       Long64_t maxEntries=-1);
+
+// -----------------------------------------------------------
+
+int GetEmptyTowers(const GammaJetFitter_t &fitter,
+		   std::vector<Int_t> &empty_towers,
+		   int weighted=1,
+		   double minWeight=0., int fractionFromMax=1,
+		   std::vector<Double_t> *towerWeightCount=NULL);
+
+// -----------------------------------------------------------
 // ---------------------------------------------------------
 
 template <class type_t>
