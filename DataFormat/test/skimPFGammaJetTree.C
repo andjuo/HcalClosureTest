@@ -36,12 +36,13 @@ void skimPFGammaJetTree(TString inpFileName,
     Long64_t nb = inpData.GetEntry(iEntry);
     nBytes += nb;
     if (iEntry%10000==0) std::cout << " ... reading entry " << iEntry << "\n";
-    std::cout << "ientry=" << iEntry << "\n";
+    //std::cout << "ientry=" << iEntry << "\n";
 
     passedCount++;
 
     aux.SetEventNo(inpData.EventNumber);
     aux.SetRunNo(inpData.RunNumber);
+    aux.SetGenE(inpData.tagPho_genEnergy,inpData.ppfjet_genE);
     dt->SetAuxInfo(aux);
 
     dt->SetTagEEtaPhi(inpData.tagPho_energy,
