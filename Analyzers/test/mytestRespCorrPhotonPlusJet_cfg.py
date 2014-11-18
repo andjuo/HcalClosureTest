@@ -8,6 +8,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.autoCond import autoCond
 process.load("Configuration.Geometry.GeometryIdeal_cff")
 process.GlobalTag.globaltag=autoCond['startup']
+#process.GlobalTag.globaltag='START53_V7G::All' # latest for Summer12 MC
 
 #process.load('RecoJets.Configuration.RecoPFJets_cff')
 #process.kt6PFJets = process.kt6PFJets.clone(rParam = 0.6, doRhoFastjet = True)          
@@ -34,7 +35,7 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring(
 # CMSSW 7_X_Y needs ak4 jets instead of ak5 jets!
 process.calcrespcorrphotonplusjet.pfJetCollName = cms.string('ak5PFJets')
 #process.calcrespcorrphotonplusjet.pfJetCollName = cms.string('ak5PFJetsL1') # L1 corrected jet? # needs production
-process.calcrespcorrphotonplusjet.pfJetCorrName = cms.string('ak5PFL2L3')
+process.calcrespcorrphotonplusjet.pfJetCorrName = cms.string('ak5PFL1FastL2L3')
 process.calcrespcorrphotonplusjet.photonJetDPhiMin = cms.double(0.)
 
 
@@ -59,6 +60,9 @@ readFiles = cms.untracked.vstring( *mylist )
 #readFiles=cms.untracked.vstring('file:/tmp/andriusj/data/piGammaPt50_10_RECO.root')
 
 ##process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring('/store/relval/CMSSW_5_3_16/RelValPyquen_GammaJet_pt20_2760GeV/GEN-SIM-RECO/PU_STARTHI53_LV1_mar03-v2/00000/20FE26F4-65A3-E311-B12C-0025904C6378.root'))
+
+readFiles=cms.untracked.vstring('/store/group/comm_hcal/gammaJet/temp_Summer12_\
+DR53X/selectionGPt_120to170_12k.root')
 
 process.source = cms.Source("PoolSource", 
 #fileNames = cms.untracked.vstring('file:/uscms/home/lovedeep/eos/RelValPhotonJets_Pt_10_CMSSW_5_3_12_patch2_A4609359-9E2B-E311-B331-0025905964A6.root')
