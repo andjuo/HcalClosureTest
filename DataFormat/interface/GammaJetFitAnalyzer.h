@@ -30,6 +30,12 @@ class GammaJetFitAnalyzer_t {
 		    const TArrayD *hcalCorrCf=NULL,
 		    int nBins=100, double EtMin=0., double EtMax=1000) const;
 
+  TH1D* plot_EnergyOverGenEnergy
+                   (const char *hName, const char *hTitle,
+		    int tag=0, int transverse=-1, // transverse is ignored
+		    const TArrayD *hcalCorrCf=NULL,
+		    int nBins=100, double RatioMin=0.,double RatioMax=2.) const;
+
   TH2D* plot_TowerEn(const char *hNameBase, const char *hTitle,
 		     unsigned int idxMin, unsigned int idxMax,
 		     int plotProbe=1,
