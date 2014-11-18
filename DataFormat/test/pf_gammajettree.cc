@@ -76,6 +76,7 @@ void pf_gammajettree::ActivateBranches_forFitSkim() {
   ActivateBranches(3, "tagPho_idTight","tagPho_idLoose","tagPho_pixelSeed");
   ActivateBranches(2, "nPhotons","nPFJets");
   ActivateBranches(1, "pfjet2_pt");
+  ActivateBranches(2, "tagPho_genEnergy", "ppfjet_genE");
   ActivateBranches_forRecHitsEnergyCalc();
   ActivateBranches_jetID(1);
 }
