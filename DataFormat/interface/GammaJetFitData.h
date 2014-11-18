@@ -14,7 +14,13 @@
 #include <TObject.h>
 #include <TMinuit.h>
 #include <TH1D.h>
+#include <TH2D.h>
+#include <TCanvas.h>
 #include <TString.h>
+#include <TFile.h>
+#include <TObjString.h>
+#include <TTree.h>
+
 #include <cmath>
 #include <algorithm> // std::find
 
@@ -73,6 +79,20 @@ int GetEmptyTowers(const GammaJetFitter_t &fitter,
 		   int weighted=1,
 		   double minWeight=0., int fractionFromMax=1,
 		   std::vector<Double_t> *towerWeightCount=NULL);
+
+// -----------------------------------------------------------
+
+int SaveVectorsToFile(TString fName,
+		      const std::vector<TH1D*> &histos1D,
+		      const std::vector<TH2D*> &histos2D,
+		      const std::vector<TCanvas*> &canvasV,
+		      const std::vector<TString> &knownMessages,
+		      int msgLineCount, ...);
+
+
+// -----------------------------------------------------------
+
+std::vector<TString> packMessages(int msgLineCount, ...);
 
 // -----------------------------------------------------------
 // ---------------------------------------------------------
@@ -136,18 +156,23 @@ class GammaJetEventAuxInfo_t : public TObject {
 protected:
   Int_t fEventNo, fRunNo;
   Double_t fProbeHcalENoRecHits;
+  Double_t fTagGenE, fProbeGenE;
 public:
 
   GammaJetEventAuxInfo_t(Int_t eventNo=-1, Int_t runNo=-1)
     : fEventNo(eventNo), fRunNo(runNo),
-    fProbeHcalENoRecHits(0.)
+    fProbeHcalENoRecHits(0.),
+    fTagGenE(0.),
+    fProbeGenE(0.)
   {}
 
-  GammaJetEventAuxInfo_t(const GammaJetEventAuxInfo_t &e) :
-    TObject(e),
+  GammaJetEventAuxInfo_t(const GammaJetEventAuxInfo_t &e)
+    : TObject(e),
     fEventNo(e.fEventNo),
     fRunNo(e.fRunNo),
-    fProbeHcalENoRecHits(e.fProbeHcalENoRecHits)
+    fProbeHcalENoRecHits(e.fProbeHcalENoRecHits),
+    fTagGenE(e.fTagGenE),
+    fProbeGenE(e.fProbeGenE)
   {}
 
   Int_t GetEventNo() const { return fEventNo; }
@@ -156,6 +181,10 @@ public:
   void SetRunNo(Int_t no) { fRunNo=no; }
   Double_t GetProbeHcalENoRecHits() const { return fProbeHcalENoRecHits; }
   void SetProbeHcalENoRecHits(Double_t val) { fProbeHcalENoRecHits=val; }
+  Double_t GetTagGenE() const { return fTagGenE; }
+  Double_t GetProbeGenE() const { return fProbeGenE; }
+  void SetGenE(Double_t tagGenE, Double_t probeGenE)
+  { fTagGenE=tagGenE; fProbeGenE=probeGenE; }
 
   void Assign(const GammaJetEventAuxInfo_t &e);
 
@@ -311,6 +340,7 @@ struct GammaJetCuts_t {
 };
 
 // -----------------------------------------------------------
+// -----------------------------------------------------------
 
 //
 // A wrapper class to contain data to minimize
@@ -383,6 +413,18 @@ class GammaJetFitter_t : public TObject {
   
   inline void SetFittingProcedure(Int_t p) { fFittingProcedure=p; }
 
+  TH1D* createHistoFromMinuitParameters
+    (const TMinuit *xMinuit, TString histoName,TString histoTitle) const;
+  TH1D* createIEtaHistoFromVector(TString histoName, TString histoTitle,
+				  const std::vector<Double_t> &vec,
+				  const std::vector<Double_t> *err=NULL) const;
+
+  int SaveInfoToFile(TString fNameTag,
+		     const std::vector<TH1D*> &histos1D,
+		     const std::vector<TH2D*> &histos2D,
+		     const std::vector<TCanvas*> &canvasV,
+		     const std::vector<TString> &knownMessages) const;
+
  protected:
   // actual data
   std::vector<GammaJetEvent_t*> fData;
@@ -396,6 +438,11 @@ class GammaJetFitter_t : public TObject {
   Double_t fErrorDef;
   Double_t fParStep, fParMin, fParMax;
   Double_t fEcalRes, fHcalRes, fHfRes;
+
+  // store info about the fit
+  std::vector<Int_t> fFixedTowers;
+  std::vector<Double_t> fDerivedCoefs;
+  TH1D *fHistoIniCoefs, *fHistoDerivedCoefs;
 
  public:
   ClassDef(GammaJetFitter_t, 1)

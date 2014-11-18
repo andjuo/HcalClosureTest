@@ -65,6 +65,8 @@ void GammaJetEventAuxInfo_t::Assign(const GammaJetEventAuxInfo_t &e) {
   fEventNo=e.fEventNo;
   fRunNo=e.fRunNo;
   fProbeHcalENoRecHits=e.fProbeHcalENoRecHits;
+  fTagGenE=e.fTagGenE;
+  fProbeGenE=e.fProbeGenE;
 }
 
 // ----------------------------------------------------------------
@@ -72,6 +74,7 @@ void GammaJetEventAuxInfo_t::Assign(const GammaJetEventAuxInfo_t &e) {
 std::ostream& operator<<(std::ostream& out, const GammaJetEventAuxInfo_t &e) {
   out << "eventNo=" << e.fEventNo << ", runNo=" << e.fRunNo;
   out << " hcalENoRecHits=" << e.fProbeHcalENoRecHits;
+  std::cout << "genE= " << e.fTagGenE << " & " << e.fProbeGenE;
   return out;
 }
 
@@ -235,7 +238,9 @@ GammaJetFitter_t::GammaJetFitter_t()
     fPrintLevel(0),
     fErrorDef(0.5),
     fParStep(0.1), fParMin(0.), fParMax(2.),
-    fEcalRes(0.07), fHcalRes(1.15), fHfRes(1.35)
+    fEcalRes(0.07), fHcalRes(1.15), fHfRes(1.35),
+    fFixedTowers(), fDerivedCoefs(),
+    fHistoIniCoefs(NULL), fHistoDerivedCoefs(NULL)
 { }
 
 // ----------------------------------------------------------------
@@ -368,6 +373,15 @@ TH1D* GammaJetFitter_t::doFit(const char *histoName, const char *histoTitle,
     }
   }
 
+  // save some info
+  if (fFixedTowers.size()) fFixedTowers.clear();
+  if (fDerivedCoefs.size()) fDerivedCoefs.clear();
+  if (fixTowers) { fFixedTowers= *fixTowers; }
+  fHistoIniCoefs =
+    createHistoFromMinuitParameters(myMinuit,
+				    histoName + TString("_iniCfs"),
+				    histoTitle + TString(" iniCfs"));
+
   // scan the parameters
   //myMinuit->mcscan();
 
@@ -375,14 +389,7 @@ TH1D* GammaJetFitter_t::doFit(const char *histoName, const char *histoTitle,
   myMinuit->Migrad();
 
   // return the results
-  TH1D* histo=new TH1D(histoName,histoTitle,
-		       NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
-  for(int i=1; i<=NUMTOWERS; i++) {
-    Double_t val, error;
-    myMinuit->GetParameter(i-1, val, error);
-    histo->SetBinContent(i, val);
-    histo->SetBinError(i, error);
-  }
+  TH1D* histo= createHistoFromMinuitParameters(myMinuit,histoName,histoTitle);
 
   for (unsigned int i=0; i<hcalCorrCf.size(); ++i) {
     Double_t val,error;
@@ -392,6 +399,11 @@ TH1D* GammaJetFitter_t::doFit(const char *histoName, const char *histoTitle,
       std::cout << "spec param #" << i << " " << val << " +- " << error <<"\n";
     }
   }
+
+  // save some info
+  histo->SetName(histoName + TString("_clone"));
+  fHistoDerivedCoefs=(TH1D*)histo->Clone(histoName);
+  fDerivedCoefs= hcalCorrCf;
 
   return histo;
 
@@ -418,6 +430,93 @@ void GammaJetFitter_t::PrintFitValueChange(
 }
 
 // ----------------------------------------------------------------
+
+TH1D* GammaJetFitter_t::createHistoFromMinuitParameters
+  (const TMinuit *localMinuit, TString histoName, TString histoTitle) const
+{
+    // return the results
+  TH1D* histo=new TH1D(histoName,histoTitle,
+		       NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
+  histo->SetDirectory(0);
+  for(int i=1; i<=NUMTOWERS; i++) {
+    Double_t val, error;
+    localMinuit->GetParameter(i-1, val, error);
+    histo->SetBinContent(i, val);
+    histo->SetBinError(i, error);
+  }
+  return histo;
+}
+
+// ----------------------------------------------------------------
+
+TH1D* GammaJetFitter_t::createIEtaHistoFromVector
+  (TString histoName, TString histoTitle,
+   const std::vector<Double_t> &vec,
+   const std::vector<Double_t> *errVec) const
+{
+  if (int(vec.size())!=NUMTOWERS) {
+    std::cout << "GammaJetFitter_t::createIEtaHistoFromVector: wrong size."
+	      << " NUMTOWERS=" << NUMTOWERS << ", vec.size=" << vec.size()
+	      << std::endl;
+    return NULL;
+  }
+    // return the results
+  TH1D* histo=new TH1D(histoName,histoTitle,
+		       NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
+  histo->SetDirectory(0);
+  for(unsigned int i=0; i<vec.size(); i++) {
+    //int iEta= i-MAXIETA;
+    Double_t val = vec[i];
+    Double_t error = (errVec) ? errVec->at(i) : 0.;
+    histo->SetBinContent(i+1, val);
+    histo->SetBinError(i+1, error);
+  }
+  return histo;
+}
+
+// ----------------------------------------------------------------
+
+int GammaJetFitter_t::SaveInfoToFile
+             (TString fNameTag,
+	      const std::vector<TH1D*> &histos1D_inp,
+	      const std::vector<TH2D*> &histos2D,
+	      const std::vector<TCanvas*> &canvasV,
+	      const std::vector<TString> &knownMessages) const
+{
+  if ((fNameTag.Length()>0) && (fNameTag[0]!='_')) fNameTag.Prepend("_");
+  TString fName=Form("cfGammaJet%s.root",fNameTag.Data());
+
+  std::vector<TH1D*> histos1D;
+  histos1D.reserve(histos1D_inp.size()+3);
+  for (unsigned int i=0; i<histos1D_inp.size(); ++i) {
+    histos1D.push_back(histos1D_inp[i]);
+  }
+
+  histos1D.push_back(fHistoDerivedCoefs);
+  histos1D.push_back(fHistoIniCoefs);
+
+  std::vector<Double_t> locFixedTowers(NUMTOWERS);
+  for (unsigned int i=0; i<fFixedTowers.size(); i++) {
+    int idx= fFixedTowers[i] + MAXIETA;
+    locFixedTowers[idx]=1.;
+  }
+  TH1D* hFixedTowers= createIEtaHistoFromVector("hFixedTowers","fixed towers",
+						locFixedTowers);
+  hFixedTowers->SetStats(0);
+  histos1D.push_back(hFixedTowers);
+
+  if (!SaveVectorsToFile(fName,histos1D,histos2D,
+			 canvasV, knownMessages,0)) {
+    std::cout << "called from GammaJetFitter_t::SaveInfoToFile\n";
+    return 0;
+  }
+
+  return 1;
+}
+
+// ----------------------------------------------------------------
+// ----------------------------------------------------------------
+
 
 
 void gammaJet_FCN(Int_t &npar, Double_t* gin, Double_t &f,
@@ -520,6 +619,80 @@ int GetEmptyTowers(const GammaJetFitter_t &fitter,
   }
 
   return 1;
+}
+
+// ----------------------------------------------------------------
+
+int SaveVectorsToFile(TString fName,
+		      const std::vector<TH1D*> &histos1D,
+		      const std::vector<TH2D*> &histos2D,
+		      const std::vector<TCanvas*> &canvasV,
+		      const std::vector<TString> &knownMessages,
+		      int msgLineCount, ...)
+{
+  TFile fout(fName,"recreate");
+  if (!fout.IsOpen()) {
+    std::cout << "SaveVectorsToFile(" << fName
+	      << "): failed to create the file\n";
+    return 0;
+  }
+  fout.cd();
+
+  for (unsigned int i=0; i<histos1D.size(); ++i) histos1D[i]->Write();
+  for (unsigned int i=0; i<histos2D.size(); ++i) histos2D[i]->Write();
+  for (unsigned int i=0; i<canvasV.size(); ++i) canvasV[i]->Write();
+
+  if ((knownMessages.size()>0) || (msgLineCount>0)) {
+    TObjString ostr;
+    ostr.Write("info_fields_follow");
+
+    for (unsigned int i=0; i<knownMessages.size(); ++i) {
+      ostr.Write(knownMessages[i]);
+    }
+
+    if (msgLineCount>0) {
+      va_list vl;
+      va_start(vl,msgLineCount);
+      for (int i=0; i<msgLineCount; ++i) {
+	typedef const char *constCharPtr;
+	TString temp= TString(va_arg(vl,constCharPtr));
+	ostr.Write(temp);
+      }
+      va_end(vl);
+    }
+  }
+
+  // put time stamp
+  time_t ltime;
+  ltime=time(NULL);
+  TString str = TString(asctime(localtime(&ltime)));
+  if (str[str.Length()-1]=='\n') str.Remove(str.Length()-1,1);
+  TObjString date(str);
+  date.Write(str.Data());
+
+  fout.Close();
+  std::cout << "File <" << fout.GetName() << "> created\n";
+  return 1;
+
+}
+
+// ----------------------------------------------------------------
+
+std::vector<TString> packMessages(int msgLineCount, ...)
+{
+  std::vector<TString> knownMessages;
+  if (msgLineCount>0) {
+    knownMessages.reserve(msgLineCount);
+    va_list vl;
+    va_start(vl,msgLineCount);
+    for (int i=0; i<msgLineCount; ++i) {
+      typedef const char *constCharPtr;
+      TString temp= TString(va_arg(vl,constCharPtr));
+      knownMessages.push_back(temp);
+    }
+    va_end(vl);
+  }
+  return knownMessages;
 }
 
 // ----------------------------------------------------------------
