@@ -95,6 +95,17 @@ void analyzePFGammaJetTree(TString inpFileName,
   h1_jet_energy_PFoverGen->SetStats(1);
   h1_jet_energy_RHoverGen->SetStats(1);
 
+  int show_jet_pT_PF_over_Gen=1;
+  TH1D *h1_jet_pT_PFoverGen= new TH1D("h1_jet_pT_PFoverGen",
+	       "Jet E_{T} ratio (PF div gen);p_{T}^{PF}/p_{T}^{gen};count",
+					  100,0.,2.5);
+  TH1D *h1_jet_pT_RHoverGen= new TH1D("h1_jet_pT_RHoverGen",
+	       "Jet E_{T} ratio (RH div gen);p_{T}^{RH}/p_{T}^{gen};count",
+					  100,0.,2.5);
+  prepareHisto(h1_jet_pT_PFoverGen);
+  prepareHisto(h1_jet_pT_RHoverGen);
+  h1_jet_pT_PFoverGen->SetStats(1);
+  h1_jet_pT_RHoverGen->SetStats(1);
 
   int show_jet_energy_PF_over_Gen_divScale=0; // this is not correct plot
   TH1D *h1_jet_energy_PFoverGen_divScale=
@@ -224,6 +235,8 @@ void analyzePFGammaJetTree(TString inpFileName,
     h1_jet_energy_RHoverGen->Fill( dt->GetProbeEtot()/inpData.ppfjet_genE, w);
     h1_jet_energy_PFoverGen_divScale->Fill( inpData.ppfjet_E/inpData.ppfjet_genE/inpData.ppfjet_scale, w);
     h1_jet_energy_RHoverGen_divScale->Fill( dt->GetProbeEtot()/inpData.ppfjet_genE/inpData.ppfjet_scale, w);
+    h1_jet_pT_PFoverGen->Fill( inpData.ppfjet_pt/inpData.ppfjet_genpt, w);
+    h1_jet_pT_RHoverGen->Fill( dt->GetProbeETtot()/inpData.ppfjet_genpt, w);
     h2_pho_pt->Fill( inpData.tagPho_genPt, inpData.tagPho_pt, w);
     h2_jet_ptPF->Fill( inpData.ppfjet_genpt, inpData.ppfjet_pt, w);
     //h2_jet_ptPF->Fill( inpData.pfjet2_genpt, inpData.pfjet2_pt, w);
@@ -233,7 +246,7 @@ void analyzePFGammaJetTree(TString inpFileName,
     h2_pho_vs_jet_recoPtRH->Fill( inpData.tagPho_pt, dt->GetProbeETtot(), w);
     h2_pho_vs_jet_recoEta->Fill( inpData.tagPho_eta, inpData.ppfjet_eta, w);
 
-    int gen_debug=2;
+    int gen_debug=0;
     if (gen_debug==1) {
       std::cout << "iEntry=" << iEntry << ",    leading jet genE=" << inpData.ppfjet_genE << ", pfE=" << inpData.ppfjet_E << ", rhE=" << dt->GetProbeEtot() << "\n";
       std::cout << " -- " << dt->CalcProbeHcalEtot() << " + " << dt->GetProbeEcalE() << "\n";
@@ -291,6 +304,10 @@ void analyzePFGammaJetTree(TString inpFileName,
   if (show_jet_energy_PF_over_Gen_divScale) {
     displayHisto(h1_jet_energy_PFoverGen_divScale,"e_PFoverGen_divScale","hist");
     displayHisto(h1_jet_energy_RHoverGen_divScale,"e_RHoverGen_divScale","hist");
+  }
+  if (show_jet_pT_PF_over_Gen) {
+    displayHisto(h1_jet_pT_PFoverGen,"pT_PFoverGen","hist");
+    displayHisto(h1_jet_pT_RHoverGen,"pT_RHoverGen","hist");
   }
 
   if (show_pho2D_pt) displayHisto(h2_pho_pt,"pho2D_pt","COLZ");
