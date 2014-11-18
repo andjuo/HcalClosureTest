@@ -1,34 +1,51 @@
 #include "link_GammaJetFit.h"
 #include "link_GammaJetFitAnalyzer.h"
 #include <TCanvas.h>
+#include "helper.h"
 
 void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
-		       Long64_t maxEntries=-1) {
+		       Long64_t maxEntries=-1,
+		       TString outFileNameTag="",
+		       double minFraction_user=-1.) {
 
   GammaJetCuts_t cuts;
   GammaJetFitter_t fitter;
+
+  std::vector<TH1D*> saveHistos1D_vec;
+  std::vector<TH2D*> saveHistos2D_vec;
+  std::vector<TCanvas*> saveCanvas_vec;
+
+  int nBins=50;
+  double etMax=200;
 
   if (!LoadGammaJetEvents(fname,cuts,fitter,maxEntries)) return;
   HERE("load ok");
 
   std::vector<Int_t> fixTowers;
-  if (!GetEmptyTowers(fitter,fixTowers, 1, 0.1,1)) return;
+  double minFraction=0.1;
+  //minFraction=0.00001;
+  if (minFraction_user>=0) minFraction=minFraction_user;
+  if (!GetEmptyTowers(fitter,fixTowers, 1, minFraction,1)) return;
 
   printVec("fixTowers",fixTowers);
+
 
   if (1) {
     GammaJetFitAnalyzer_t anObj(&fitter);
     TH1D *hTowCount=
       anObj.plot_TowerEntryCount("hTowerCount",
-				 "Events in towers;iEta_{tow};count",
-				 1,0.1,1);
+				 "Events in towers;iEta_{tower};count",1);
     TCanvas *cTowCount= new TCanvas("cTowCount","cTowCount",600,600);
     hTowCount->Draw("LPE");
     cTowCount->Update();
+
+    saveHistos1D_vec.push_back(hTowCount);
+    saveCanvas_vec.push_back(cTowCount);
     //return;
   }
 
   std::vector<Double_t> hcalCorrCf(NUMTOWERS,1.);
+  TArrayD cfAt1= convert(hcalCorrCf);
   if (0) {
     TArrayD cf0= convert(hcalCorrCf);
     std::cout << "init values " << hcalCorrCf << "\n";
@@ -38,6 +55,64 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     const GammaJetEvent_t *e = fitter.at(0);
     std::cout << " Et " << e->GetTagETtot() << " vs " << e->GetProbeETtot() << "\n";
     std::cout << " cmp " << e->GetTagETtot(cf0) << " vs " << e->GetProbeETtot(cf0) << "\n";
+    return;
+  }
+
+  if (0) { // plot jet energy uncorr vs corr
+    /// This is a debug command set
+    TArrayD cf0= convert(hcalCorrCf);
+    for (int transverse=0; transverse<1; transverse++) {
+      int tag=0; // jet is the probe
+      GammaJetFitAnalyzer_t anObj(&fitter);
+      TString hName1=(!transverse) ? "h1JetEnergy_Uncorr" : "h1JetET_Uncorr";
+      TString hName2=(!transverse) ? "h1JetEnergy_Corr" : "h1JetET_Corr";
+      TH1D* h1_uncorr = anObj.plot_Energy(hName1,
+		       "Jet energy (uncorr)",tag,transverse,NULL,
+					  nBins,0,etMax);
+      TH1D *h1_corr = anObj.plot_Energy(hName2,
+				      "Jet energy (corr)",tag,transverse,&cf0,
+				      nBins,0,etMax);
+
+      TString canvName = (transverse) ? "cJetEt" : "cJetEn";
+      TString canvTitle= (transverse) ? "Jet transverse energy" : "Jet energy";
+      TCanvas *cx= new TCanvas(canvName,canvName,600,600);
+      plotTwoHistos(cx,canvTitle,
+		    h1_uncorr,"uncorr",kBlack,"hist",
+		    h1_corr,"corr",kBlue,"LP");
+      cx->Update();
+
+      saveHistos1D_vec.push_back(h1_uncorr);
+      saveHistos1D_vec.push_back(h1_corr);
+      saveCanvas_vec.push_back(cx);
+    }
+    return;
+  }
+
+  if (0) { // plot jet energy uncorr vs corr
+    // for debug purposes
+    TArrayD cf0= convert(hcalCorrCf);
+    int tag=0; // jet is the probe
+    GammaJetFitAnalyzer_t anObj(&fitter);
+    TString hName1="h1JetEnergyRes_Uncorr";
+    TString hName2="h1JetEnergyRes_Corr";
+    TH1D* h1_uncorr = anObj.plot_EnergyOverGenEnergy(hName1,
+		       "Jet energy resolution (uncorr)",tag,-1,NULL,
+					  nBins,0,2.);
+    TH1D *h1_corr = anObj.plot_EnergyOverGenEnergy(hName2,
+		       "Jet energy resolution (corr)",tag,-1,&cf0,
+					  nBins,0,2.);
+
+    TString canvName = "cJetEnResol";
+    TString canvFigTitle= "Jet energy resolution";
+    TCanvas *cx= new TCanvas(canvName,canvName,600,600);
+    plotTwoHistos(cx,canvFigTitle,
+		  h1_uncorr,"uncorr",kBlack,"hist",
+		  h1_corr,"corr",kBlue,"LP");
+    cx->Update();
+
+    saveHistos1D_vec.push_back(h1_uncorr);
+    saveHistos1D_vec.push_back(h1_corr);
+    saveCanvas_vec.push_back(cx);
     return;
   }
 
@@ -66,6 +141,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
   //fixTowers.push_back(31);
 
   TH1D* h= fitter.doFit("hCorr","hCorr", hcalCorrCf, &fixTowers);
+  if (!h) std::cout << "fitting failed\n";
   TArrayD cf= convert(hcalCorrCf);
 
   //printVec("hcalCorrCf ",hcalCorrCf);
@@ -74,8 +150,15 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 
   if (1 && h) {
     TCanvas *cx= new TCanvas("cx","cx", 600,600);
-    h->Draw("hist");
+    TH1D *hCoef= (TH1D*)h->Clone("hCoef");
+    hCoef->SetStats(0);
+    hCoef->SetDirectory(0);
+    hCoef->SetTitle("correction coeffs;iEta_{tower};cf");
+    hCoef->Draw("hist");
     cx->Update();
+
+    saveHistos1D_vec.push_back(hCoef);
+    saveCanvas_vec.push_back(cx);
   }
 
   if (1) {
@@ -86,10 +169,10 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 
     TH2D* h2EtVsEt_unCorr=
       analyzer.plot_EtVsEt("h2EtVsEtUncorr", "Et vs Et : uncorr",
-						NULL);
+			   NULL, nBins,0.,etMax);
     TH2D* h2EtVsEt_corr=
       analyzer.plot_EtVsEt("h2EtVsEtCorr","Et vs Et : corr",
-			   &cf);
+			   &cf, nBins,0.,etMax);
     TCanvas *cEt0=new TCanvas("cEt0","cEt0",600,600);
     h2EtVsEt_unCorr->Draw("COLZ");
     cEt0->Update();
@@ -97,6 +180,11 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     TCanvas *cEt1=new TCanvas("cEt1","cEt1",600,600);
     h2EtVsEt_corr->Draw("COLZ");
     cEt1->Update();
+
+    saveHistos2D_vec.push_back(h2EtVsEt_unCorr);
+    saveHistos2D_vec.push_back(h2EtVsEt_corr);
+    saveCanvas_vec.push_back(cEt0);
+    saveCanvas_vec.push_back(cEt1);
   }
 
   if (0) {
@@ -125,34 +213,87 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     TH2D* h2=anObj.plot_TowerFitProfile("h2TowFittedProfile",
 					"tower fit profile",
 					0, 20, 0., 2., &hcalCorrCf);
+    saveHistos2D_vec.push_back(h2);
     TCanvas *cx=new TCanvas("cxTFPfitted","cxTFPfitted",600,600);
     h2->Draw("COLZ");
     cx->Update();
+
+    saveHistos2D_vec.push_back(h2);
+    saveCanvas_vec.push_back(cx);
     //return;
   }
 
   if (1) { // plot jet energy uncorr vs corr
-    int transverse=0;
-    int tag=0; // jet is the probe
-    int nBins=50;
-    double etMax=200;
-    GammaJetFitAnalyzer_t anObj(&fitter);
-    TH1D* h1_uncorr = anObj.plot_Energy("h1JetEnergyUncorr",
-			      "Jet energy (uncorr)",tag,transverse,NULL,
-					nBins,0,etMax);
-    TH1D *h1_corr = anObj.plot_Energy("h1JetEnergyCorr",
+    for (int transverse=0; transverse<2; transverse++) {
+      int tag=0; // jet is the probe
+      GammaJetFitAnalyzer_t anObj(&fitter);
+      TString hName1=(!transverse) ? "h1JetEnergy_Uncorr" : "h1JetET_Uncorr";
+      TString hName2=(!transverse) ? "h1JetEnergy_Corr" : "h1JetET_Corr";
+      TH1D* h1_uncorr = anObj.plot_Energy(hName1,
+		       "Jet energy (uncorr)",tag,transverse,NULL,
+					  nBins,0,etMax);
+      TH1D *h1_corr = anObj.plot_Energy(hName2,
 				      "Jet energy (corr)",tag,transverse,&cf,
 				      nBins,0,etMax);
-    TCanvas *cx= new TCanvas("cJetEn","cJetEn",600,600);
-    plotTwoHistos(cx,"Jet energy",
-		  h1_uncorr,"uncorr",kBlack,"hist",
-		  h1_corr,"corr",kRed,"LP");
-    //printHisto(h1_uncorr);
-    //printHisto(h1_corr);
-    //h1_uncorr->Draw("hist");
-    //h1_corr->SetLineColor(kRed);
-    //h1_corr->Draw("LPsame");
-    cx->Update();
+
+      TString canvName = (transverse) ? "cJetEt" : "cJetEn";
+      TString canvFigTitle=
+	(transverse) ? "Jet transverse energy" : "Jet energy";
+      TCanvas *cx= new TCanvas(canvName,canvName,600,600);
+      plotTwoHistos(cx,canvFigTitle,
+		    h1_uncorr,"uncorr",kBlack,"hist",
+		    h1_corr,"corr",kBlue,"LP");
+      cx->Update();
+
+      saveHistos1D_vec.push_back(h1_uncorr);
+      saveHistos1D_vec.push_back(h1_corr);
+      saveCanvas_vec.push_back(cx);
+    }
   }
 
+  if (1) { // plot jet energy uncorr vs corr
+    int tag=0; // jet is the probe
+    GammaJetFitAnalyzer_t anObj(&fitter);
+    TString hName1="h1JetEnergyRes_Uncorr";
+    TString hName2="h1JetEnergyRes_Corr";
+    TH1D* h1_uncorr = anObj.plot_EnergyOverGenEnergy(hName1,
+						     "Jet energy resolution (uncorr)",tag,-1,//
+						     //NULL,
+						     &cfAt1,
+					  nBins,0,2.);
+    TH1D *h1_corr = anObj.plot_EnergyOverGenEnergy(hName2,
+		       "Jet energy resolution (corr)",tag,-1,&cf,
+					  nBins,0,2.);
+
+    TString canvName = "cJetEnResol";
+    TString canvFigTitle= "Jet energy resolution";
+    TCanvas *cx= new TCanvas(canvName,canvName,600,600);
+    plotTwoHistos(cx,canvFigTitle,
+		  h1_uncorr,"uncorr",kBlack,"hist",
+		  h1_corr,"corr",kBlue,"LP");
+    cx->Update();
+
+    saveHistos1D_vec.push_back(h1_uncorr);
+    saveHistos1D_vec.push_back(h1_corr);
+    saveCanvas_vec.push_back(cx);
+  }
+
+  if (1) {
+    fitter.SaveInfoToFile(outFileNameTag,
+			  saveHistos1D_vec,
+			  saveHistos2D_vec,
+			  saveCanvas_vec,
+			  packMessages(2,fname.Data(),
+				       Form("maxEntries=%ld",long(maxEntries)))
+			  );
+  }
+
+  if (1) {
+    TString destDir="plots_" + outFileNameTag;
+    for (unsigned int i=0; i<saveCanvas_vec.size(); ++i) {
+      TString figName="fig-" + outFileNameTag + TString("-") +
+	TString(saveCanvas_vec[i]->GetName());
+      SaveCanvas(saveCanvas_vec[i],figName,destDir);
+    }
+  }
 }
