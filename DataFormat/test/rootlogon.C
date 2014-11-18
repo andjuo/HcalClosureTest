@@ -1,5 +1,6 @@
 {
 
+  gROOT->ProcessLine(".x MitStyleRemix.cc+");
   gROOT->ProcessLine(".x CPlot.cc+");
 
   if (0) { // to study dijet data
