@@ -20,7 +20,7 @@ process.load('JetMETCorrections.Configuration.JetCorrectionProducers_cff')
 process.load('JetMETCorrections.Configuration.JetCorrectionServices_cff')
 
 # run over files
-process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_RelValPhotonJets_5_3_14.root')
+process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_nonCHS_120to170.root')
 
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
@@ -90,3 +90,12 @@ process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 #process.Timing = cms.Service('Timing')
 
 process.p = cms.Path(process.calcrespcorrphotonplusjet)
+
+# Not sure if needed
+process.output = \
+    cms.OutputModule("PoolOutputModule",
+                     outputCommands = cms.untracked.vstring("drop *"),
+                     fileName = cms.untracked.string('dummy_output.root'),
+                     )
+
+process.out = cms.EndPath(process.output)
