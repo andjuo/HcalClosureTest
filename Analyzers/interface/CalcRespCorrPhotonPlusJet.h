@@ -318,7 +318,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
     float phi2=jet.jet()->phi();
     float dphi=fabs(phi1-phi2);
     const float cPi= 4*atan(1);
-    while (fabs(dphi-cPi)>cPi) dphi = 2*cPi - dphi;
+    while (dphi>cPi) dphi = fabs(2*cPi - dphi);
     return dphi;
   }
 
