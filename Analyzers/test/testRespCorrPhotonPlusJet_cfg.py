@@ -34,11 +34,10 @@ listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
 #listFileName='selection_tmp.txt'
 listFileName='fileInfo_pionGun.txt'
 mylist = FileUtils.loadListFromFile(listFileName)
-mylist.extend( FileUtils.loadListFromFile(listFileName) )
+# to add additional files from another list, define that list and
+# uncomment the next line
+#mylist.extend( FileUtils.loadListFromFile(listFileName2) )
 readFiles = cms.untracked.vstring( *mylist )
-
-
-##process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring('/store/relval/CMSSW_5_3_16/RelValPyquen_GammaJet_pt20_2760GeV/GEN-SIM-RECO/PU_STARTHI53_LV1_mar03-v2/00000/20FE26F4-65A3-E311-B12C-0025904C6378.root'))
 
 process.source = cms.Source("PoolSource", 
 #fileNames = cms.untracked.vstring('file:/uscms/home/lovedeep/eos/RelValPhotonJets_Pt_10_CMSSW_5_3_12_patch2_A4609359-9E2B-E311-B331-0025905964A6.root')
