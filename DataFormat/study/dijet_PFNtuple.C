@@ -81,3 +81,149 @@ void dijet_PFNtuple::PrintSelectedFields(int selection) {
 
 
 // --------------------------------------------------------------
+// --------------------------------------------------------------
+
+Double_t dijet_PFNtuple::getSumEcalE(int tagJet, int includeOthers) const {
+  double sum=0;
+
+  if (tagJet==1) {
+    for (unsigned int i=0; i< tpfjet_had_EcalE->size(); i++) {
+      sum+= tpfjet_had_EcalE->at(i);
+      if (0 && (tpfjet_had_id->at(i) >= 2)) {
+	std::cout << "tpfjet_had_id[" << i << "]=" << tpfjet_had_id->at(i)
+		  << ", EcalE=" << tpfjet_had_EcalE->at(i) << "\n";
+      }
+    }
+    if (includeOthers) {
+      sum+= tpfjet_unkown_E + tpfjet_electron_E + tpfjet_muon_E +
+	tpfjet_photon_E;
+    }
+  }
+  else {
+    for (unsigned int i=0; i< ppfjet_had_EcalE->size(); i++) {
+      sum+= ppfjet_had_EcalE->at(i);
+      if (0 && (ppfjet_had_id->at(i) >= 2)) {
+	std::cout << "ppfjet_had_id[" << i << "]=" << ppfjet_had_id->at(i)
+		  << ", EcalE=" << ppfjet_had_EcalE->at(i) << "\n";
+      }
+    }
+    if (includeOthers) {
+      sum+= ppfjet_unkown_E + ppfjet_electron_E + ppfjet_muon_E +
+	ppfjet_photon_E;
+    }
+  }
+
+  return sum;
+}
+
+// --------------------------------------------------------------
+
+Double_t dijet_PFNtuple::getSumHcalE_trackDiffEcal(int tagJet) const {
+  Double_t sum=0;
+  if (tagJet) {
+    for (unsigned int i=0; i<tpfjet_had_id->size(); ++i) {
+      int trackIdx= tpfjet_had_candtrackind->at(i);
+      if ((tpfjet_had_id->at(i) == 0) && // charged hadron
+	  (trackIdx>-1)    // has a track
+	  && (tpfjet_had_ntwrs->at(i) == 0)  // has no recHits
+	  ) {
+	sum += sqrt( pow(tpfjet_candtrack_px->at(trackIdx),2) +
+		     pow(tpfjet_candtrack_py->at(trackIdx),2) +
+		     pow(tpfjet_candtrack_pz->at(trackIdx),2) )
+	  - tpfjet_had_EcalE->at(i);
+      }
+    }
+  }
+  else {
+    for (unsigned int i=0; i<ppfjet_had_id->size(); ++i) {
+      int trackIdx= ppfjet_had_candtrackind->at(i);
+      if ((ppfjet_had_id->at(i) == 0) && // charged hadron
+	  (trackIdx>-1)    // has a track
+	  && (ppfjet_had_ntwrs->at(i) == 0)  // has no recHits
+	  ) {
+	sum += sqrt( pow(ppfjet_candtrack_px->at(trackIdx),2) +
+		     pow(ppfjet_candtrack_py->at(trackIdx),2) +
+		     pow(ppfjet_candtrack_pz->at(trackIdx),2) )
+	  - ppfjet_had_EcalE->at(i);
+      }
+    }
+  }
+ return sum;
+}
+
+// --------------------------------------------------------------
+
+std::map<Int_t,Double_t> dijet_PFNtuple::getHcalEMap
+    (int tagJet, double thrContribution) const
+{
+  std::map<Int_t,Double_t> hcalE;
+
+  if (tagJet) {
+    for (unsigned int i=0; i<tpfjet_twr_hade->size(); ++i) {
+      if (tpfjet_twr_hade->at(i)<=0) continue;
+      int clusterIdx= tpfjet_twr_clusterind->at(i);
+      if (0) {
+	std::cout << "had_i=" << i << ", clusterIdx=" << clusterIdx;
+	if (clusterIdx>=0) {
+	  std::cout << ", cluster_dR=" << tpfjet_cluster_dR->at(clusterIdx);
+	  if (tpfjet_cluster_dR->at(clusterIdx)>=0.5) {
+	    std::cout << ", don't use " << tpfjet_twr_hade->at(i)
+		      << " x " << tpfjet_twr_frac->at(i) << "\n";
+	  }
+	}
+	std::cout << "\n";
+      }
+      if ((clusterIdx<0) || (tpfjet_cluster_dR->at(clusterIdx)<0.5)) {
+	int iEta= tpfjet_twr_ieta->at(i);
+	const int MAXIETA=41;
+	if ((iEta<-MAXIETA) || (iEta>MAXIETA) || (iEta==0)) {
+	  std::cout << "getHcalE: bad iEta=" << iEta << "\n";
+	}
+	double deposit= tpfjet_twr_hade->at(i);
+	double fraction= tpfjet_twr_frac->at(i);
+	//std::cout << "iEta=" << iEta << ", deposit=" << deposit << ", fraction=" << fraction << "\n";
+	if (deposit*fraction < thrContribution) {
+	  //std::cout << " .. skip\n";
+	  continue;
+	}
+	hcalE[iEta] += deposit*fraction;
+      }
+    }
+  }
+  else {
+    for (unsigned int i=0; i<ppfjet_twr_hade->size(); ++i) {
+      if (ppfjet_twr_hade->at(i)<=0) continue;
+      int clusterIdx= ppfjet_twr_clusterind->at(i);
+      if (0) {
+	std::cout << "had_i=" << i << ", clusterIdx=" << clusterIdx;
+	if (clusterIdx>=0) {
+	  std::cout << ", cluster_dR=" << ppfjet_cluster_dR->at(clusterIdx);
+	  if (ppfjet_cluster_dR->at(clusterIdx)>=0.5) {
+	    std::cout << ", don't use " << ppfjet_twr_hade->at(i)
+		      << " x " << ppfjet_twr_frac->at(i) << "\n";
+	  }
+	}
+	std::cout << "\n";
+      }
+      if ((clusterIdx<0) || (ppfjet_cluster_dR->at(clusterIdx)<0.5)) {
+	int iEta= ppfjet_twr_ieta->at(i);
+	const int MAXIETA=41;
+	if ((iEta<-MAXIETA) || (iEta>MAXIETA) || (iEta==0)) {
+	  std::cout << "getHcalE: bad iEta=" << iEta << "\n";
+	}
+	double deposit= ppfjet_twr_hade->at(i);
+	double fraction= ppfjet_twr_frac->at(i);
+	//std::cout << "iEta=" << iEta << ", deposit=" << deposit << ", fraction=" << fraction << "\n";
+	if (deposit*fraction < thrContribution) {
+	  //std::cout << " .. skip\n";
+	  continue;
+	}
+	hcalE[iEta] += deposit*fraction;
+      }
+    }
+  }
+
+  return hcalE;
+}
+
+// --------------------------------------------------------------

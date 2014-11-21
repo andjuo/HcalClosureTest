@@ -35,6 +35,7 @@ void printVec(const char *msg, const std::vector<T> &vec, int printEol=0) {
 
 // ---------------------------------------------------------
 
+#ifndef GammaJetFitData_H_
 template <class type_t>
 inline
 std::ostream& operator<<(std::ostream& out, const std::vector<type_t> *vec) {
@@ -44,6 +45,7 @@ std::ostream& operator<<(std::ostream& out, const std::vector<type_t> *vec) {
   }
   return out;
 }
+#endif
 
 // ---------------------------------------------------------
 
