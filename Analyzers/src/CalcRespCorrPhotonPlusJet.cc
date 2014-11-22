@@ -457,8 +457,14 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   tagPho_genDeltaR_=0;
   if (doGenJets_) {
     tagPho_genDeltaR_=9999.;
+    double gen_pion_phi=0, gen_pion_eta=0, gen_pion_en=0;
     for (std::vector<reco::GenParticle>::const_iterator itmc=genparticles->begin();
 	 itmc!=genparticles->end(); itmc++) {
+      if (fabs(itmc->pdgId())==211) {
+	gen_pion_phi= itmc->phi();
+	gen_pion_eta= itmc->eta();
+	gen_pion_en = itmc->energy();
+      }
       if (itmc->status() == 1 && itmc->pdgId()==22) {
 	float dR= deltaR(tagPho_eta_,tagPho_phi_,
 			 itmc->eta(),itmc->phi());
@@ -471,6 +477,8 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 	}
       }
     }
+    std::cout << "pion (phi,eta,en) = " << gen_pion_phi << "," << gen_pion_eta << "," << gen_pion_en << "\n";
+    std::cout << "photon = " << tagPho_genPhi_ << "," << tagPho_genEta_ << "," << tagPho_genEnergy_ << "\n";
   }
   }
 
@@ -744,7 +752,9 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
       //int index = it-pfjets->begin();
       //edm::RefToBase<reco::Jet> jetRef(edm::Ref<PFJetCollection>(pfjets,index));
       //reco::PFJetRef jetRef = it->castTo<reco::PFJetRef>();
+      std::cout << "jet energy (a)=" << jet->energy() << "\n";
       double jec = correctorPF->correction(*it, iEvent, evSetup);
+      std::cout << "jet energy (b)=" << jet->energy() << "\n";
       //cout<<index<<'\t'<<jec<<'\t'<<it->et()<<'\t'<<it->pt()<<endl;
       pfjetcorretpairset.insert( PFJetCorretPair(jet, jec));//correctorPF->correction(jet->p4())) );
     }
@@ -764,7 +774,12 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 
     // Check selection
     int failSelPF = 0;
-    
+
+    if (h2_phi_pho_jet) h2_phi_pho_jet->Fill(photon_tag.photon()->phi(),pfjet_probe.jet()->phi(),eventWeight_);
+    if (h2_eta_pho_jet_dPhi0 && (calc_dPhi(photon_tag,pfjet_probe)<0.2)) {
+      h2_eta_pho_jet_dPhi0->Fill(photon_tag.photon()->eta(),pfjet_probe.jet()->eta(),eventWeight_);
+    }
+
     if (pfjet_probe.scaledEt() < jetEtMin_) failSelPF |= 1;
     if (calc_dPhi(photon_tag,pfjet_probe) < photonJetDPhiMin_) failSelPF |= 2;
     if (deltaR(photon_tag,pfjet_probe.jet())<0.5) failSelPF |= 4;
@@ -1355,18 +1370,23 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 	  ppfjet_genpt_ = jet->pt();
 	  ppfjet_genp_ = jet->p();
 	  ppfjet_genE_ = jet->energy();
+	  ppfjet_genPhi_temp= jet->phi();
 	}
       }
     } // doGenJets_
     if (iJet==2) {
       copy_leadingPfJetVars_to_pfJet2();
     }
+    else {
+      if (h2_phi_pho_jet_sel_gen) h2_phi_pho_jet_sel_gen->Fill(tagPho_genPhi_,ppfjet_genPhi_temp,eventWeight_);
+      if (h1_dphi_pho_jet_sel) h1_dphi_pho_jet_sel->Fill(calc_dPhi(photon_tag,pfjet_probe),eventWeight_);
+    }
     }
 
     h_types_->Fill(types);
     h_ntypes_->Fill(ntypes);
 
-
+    std::cout << "saved jet info: " << ppfjet_phi_ << "," << ppfjet_eta_ << "," << ppfjet_E_ << " (genE=" << ppfjet_genE_ << ")\n";
 
     // fill photon+jet variables
  
@@ -1403,6 +1423,11 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     h_twrietas_ = new TH1D("h_twrietas","h_twrietas",20,0,20);
     h_rechitspos_ = new TH2D("h_rechitspos","h_rechitspos",83,-41.5,41.5,72,-0.5,71.5);
     h_hbherecoieta_ = new TH1D("h_hbherecoieta","h_hbherecoieta",83,-41.5,41.5);
+    //const double cPI=4*atan(1);
+    h2_phi_pho_jet = new TH2D("h2_phi_pho_jet","h2_phi_pho_jet;#phi_{#gamma};#phi_{jet1}",60,-3.5,3.5, 60,-3.5,3.5);
+    h2_eta_pho_jet_dPhi0 = new TH2D("h2_eta_pho_jet_dPhi0","Eta when #Delta#phi(#gamma,jet1)<0.2;#eta_{#gamma};#eta_{jet1}", 60,-4.,4., 60,-4.,4.);
+    h2_phi_pho_jet_sel_gen = new TH2D("h2_phi_pho_jet_sel_gen","j2_phi_pho_jet_sel_gen;#phi_{#gamma}^{gen,sel};#phi_{jet1}^{gen,sel}",60,-3.5,3.5, 60,-3.5,3.5);
+    h1_dphi_pho_jet_sel= new TH1D("h1_dphi_pho_jet_sel","h1_dphi_pho_jet_sel;#Delta#phi(#gamma,jet1)_{sel};count",60,-7.0,7.0);
   }
 
   // Save info about the triggers and other misc items
@@ -1771,6 +1796,10 @@ CalcRespCorrPhotonPlusJet::endJob() {
     h_twrietas_->Write();
     h_rechitspos_->Write();
     h_hbherecoieta_->Write();
+    h2_phi_pho_jet->Write();
+    h2_eta_pho_jet_dPhi0->Write();
+    h2_phi_pho_jet_sel_gen->Write();
+    h1_dphi_pho_jet_sel->Write();
     pf_tree_->Write();
   }
   rootfile_->Close();
@@ -2106,6 +2135,7 @@ double CalcRespCorrPhotonPlusJet::deltaR(const reco::Jet* j1, const reco::Jet* j
   double deta = j1->eta()-j2->eta();
   double dphi = std::fabs(j1->phi()-j2->phi());
   if(dphi>3.1415927) dphi = 2*3.1415927 - dphi;
+  std::cout << "deltaR(jet,jet) phi calc: " << j1->phi() << "," << j2->phi() << ", dPhi=" << dphi << "\n";
   return std::sqrt(deta*deta + dphi*dphi);
 }
 
@@ -2116,6 +2146,7 @@ double CalcRespCorrPhotonPlusJet::deltaR(const double eta1, const double phi1, c
   double deta = eta1 - eta2;
   double dphi = std::fabs(phi1 - phi2);
   if(dphi>3.1415927) dphi = 2*3.1415927 - dphi;
+  //std::cout << "deltaR(eta1,phi1,eta2,phi2) phi calc: " << phi1 << "," << phi2 << ", dPhi=" << dphi << "\n";
   return std::sqrt(deta*deta + dphi*dphi);
 }
 

@@ -203,6 +203,10 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   TH1D* h_twrietas_;
   TH2D* h_rechitspos_;
   TH1D* h_hbherecoieta_;
+  TH2D* h2_phi_pho_jet;
+  TH2D* h2_eta_pho_jet_dPhi0;
+  TH2D* h2_phi_pho_jet_sel_gen;
+  TH1D* h1_dphi_pho_jet_sel;
 
   TTree* misc_tree_; // misc.information. Will be filled only once
   TTree* calo_tree_;
@@ -264,6 +268,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   int ppfjet_nConstituents_;
   float ppfjet_ChargedHadronFrac_, ppfjet_ChargedMultiplicity_, ppfjet_ChargedEMFrac_;
   float ppfjet_gendr_, ppfjet_genpt_, ppfjet_genp_, ppfjet_genE_;
+  float ppfjet_genPhi_temp;
   //float ppfjet_EBE_, ppfjet_EEE_, ppfjet_HBE_, ppfjet_HEE_, ppfjet_HFE_;
   float ppfjet_unkown_E_, ppfjet_unkown_px_, ppfjet_unkown_py_, ppfjet_unkown_pz_, ppfjet_unkown_EcalE_;
   float ppfjet_electron_E_, ppfjet_electron_px_, ppfjet_electron_py_, ppfjet_electron_pz_, ppfjet_electron_EcalE_;
@@ -319,6 +324,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
     float dphi=fabs(phi1-phi2);
     const float cPi= 4*atan(1);
     while (dphi>cPi) dphi = fabs(2*cPi - dphi);
+    std::cout << "calc_dPhi(photon,jet): " << phi1 << "," << phi2 << ", dphi=" << dphi << "\n";
     return dphi;
   }
 
