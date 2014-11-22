@@ -9,8 +9,10 @@
 
 // -----------------------------------------------
 
+#ifndef study_helper_HH
 inline
 void HERE(const char *msg) { std::cout << msg << std::endl; }
+#endif
 
 // -----------------------------------------------
 

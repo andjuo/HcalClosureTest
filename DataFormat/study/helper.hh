@@ -1,5 +1,5 @@
-#ifndef helper_HH
-#define helper_HH
+#ifndef study_helper_HH
+#define study_helper_HH
 
 #include <TH1D.h>
 #include<iostream>
