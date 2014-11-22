@@ -349,6 +349,12 @@ void displayHisto(TH1D* h, TString tag, TString drawOpt) {
   TCanvas *c=new TCanvas(canvName,canvName,600,600);
   h->Draw(drawOpt);
   c->Update();
+  TPaveStats *stats= (TPaveStats*)c->GetPrimitive("stats");
+  if (stats) {
+    stats->SetY1NDC(0.7);
+    stats->SetY2NDC(0.85);
+    c->Update();
+  }
 #ifdef helper_HH
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
@@ -383,6 +389,12 @@ void displayHisto(TH2D* h, TString tag, TString drawOpt, int drawXeqY) {
     }
   }
   c->Update();
+  TPaveStats *stats= (TPaveStats*)c->GetPrimitive("stats");
+  if (stats) {
+    stats->SetY1NDC(0.7);
+    stats->SetY2NDC(0.85);
+    c->Update();
+  }
 #ifdef helper_HH
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
