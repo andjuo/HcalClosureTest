@@ -412,6 +412,7 @@ class GammaJetFitter_t : public TObject {
   void SetErrorDef(Double_t p=0.5) { fErrorDef=p; }
   
   inline void SetFittingProcedure(Int_t p) { fFittingProcedure=p; }
+  Int_t GetFittingProcedure() const { return fFittingProcedure; }
 
   TH1D* createHistoFromMinuitParameters
     (const TMinuit *xMinuit, TString histoName,TString histoTitle) const;

@@ -11,6 +11,8 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
   GammaJetCuts_t cuts;
   GammaJetFitter_t fitter;
 
+  //fitter.SetFittingProcedure(1); // 0 - gammaJet, 1 - dijet
+
   std::vector<TH1D*> saveHistos1D_vec;
   std::vector<TH2D*> saveHistos2D_vec;
   std::vector<TCanvas*> saveCanvas_vec;
@@ -295,5 +297,9 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 	TString(saveCanvas_vec[i]->GetName());
       SaveCanvas(saveCanvas_vec[i],figName,destDir);
     }
+  }
+
+  if (fitter.GetFittingProcedure()!=0) {
+    std::cout << "special fitting procedure: " << fitter.GetFittingProcedure() << "\n";
   }
 }
