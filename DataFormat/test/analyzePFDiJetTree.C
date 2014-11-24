@@ -6,6 +6,7 @@
 #include <TText.h>
 //#include "colorPalettes.hh"
 #include "ComparisonPlot.hh"
+#include "../interface/HistoCollector.h"
 #include "helper.h"
 
 // ------------------------------------------------------
@@ -29,8 +30,17 @@ inline void prepareHisto(TH2D *h) {
 // ------------------------------------------------------
 // ------------------------------------------------------
 
-void displayHisto(TH1D* h, TString tag, TString drawOpt="LPE");
-void displayHisto(TH2D* h, TString tag, TString drawOpt="COLZ", int drawXeqY=1);
+HistoCollector_t collector;
+int saveCollection=0;
+
+// ----------------
+
+
+
+void displayHisto(int show, TH1D* h, TString tag, TString drawOpt="LPE");
+void displayHisto(int show,
+		  TH2D* h, TString tag, TString drawOpt="COLZ", int drawXeqY=1);
+
 void displayHistoRatio(TH1D *h1, TString label1, TH1D *h2, TString label2,
 		       TString xAxisLabel, TString yAxisLabel,
 		       TString tag,
@@ -303,15 +313,14 @@ void analyzePFDiJetTree(TString inpFileName,
 
   std::cout << "nEntries=" << nEntries << ", passedCount=" << passedCount << "\n";
 
-  if (show_dPhi) displayHisto(h1_dPhi,"dPhi","LPE");
-  if (show_dPt_PF) displayHisto(h1_dPt_PF, "dPt_PF","LPE");
-  //if (show_jet_tightID) displayHisto(h1_jet_tightID,"jet_tightID","LPE");
-  if (show_jet_energy_PF_over_Gen) {
-    displayHisto(h1_tjet_energy_PFoverGen,"te_PFoverGen","hist");
-    displayHisto(h1_tjet_energy_RHoverGen,"te_RHoverGen","hist");
-    displayHisto(h1_pjet_energy_PFoverGen,"pe_PFoverGen","hist");
-    displayHisto(h1_pjet_energy_RHoverGen,"pe_RHoverGen","hist");
-  }
+  displayHisto(show_dPhi,h1_dPhi,"dPhi","LPE");
+  displayHisto(show_dPt_PF,h1_dPt_PF, "dPt_PF","LPE");
+  //displayHisto(show_jet_tightID,h1_jet_tightID,"jet_tightID","LPE");
+  displayHisto(show_jet_energy_PF_over_Gen,h1_tjet_energy_PFoverGen,"te_PFoverGen","hist");
+  displayHisto(show_jet_energy_PF_over_Gen,h1_tjet_energy_RHoverGen,"te_RHoverGen","hist");
+  displayHisto(show_jet_energy_PF_over_Gen,h1_pjet_energy_PFoverGen,"pe_PFoverGen","hist");
+  displayHisto(show_jet_energy_PF_over_Gen,h1_pjet_energy_RHoverGen,"pe_RHoverGen","hist");
+
   /*
   if (show_jet_pT_PF_over_Gen) {
     displayHisto(h1_jet_pT_PFoverGen,"pT_PFoverGen","hist");
@@ -319,18 +328,16 @@ void analyzePFDiJetTree(TString inpFileName,
   }
   */
 
-  if (show_jet2D_ptPF) {
-    displayHisto(h2_tjet_ptPF,"1stjet2D_ptPF","COLZ");
-    displayHisto(h2_pjet_ptPF,"2ndjet2D_ptPF","COLZ");
-  }
-  if (show_jet2D_ptRH) {
-    displayHisto(h2_tjet_ptRH,"1stjet2D_ptRH","COLZ");
-    displayHisto(h2_pjet_ptRH,"2ndjet2D_ptRH","COLZ");
-  }
-  if (show_jet_vs_jet_genPt) displayHisto(h2_jet_vs_jet_genPt,"jet_vs_jet_genPt","COLZ");
+  displayHisto(show_jet2D_ptPF,h2_tjet_ptPF,"1stjet2D_ptPF","COLZ");
+  displayHisto(show_jet2D_ptPF,h2_pjet_ptPF,"2ndjet2D_ptPF","COLZ");
+
+  displayHisto(show_jet2D_ptRH,h2_tjet_ptRH,"1stjet2D_ptRH","COLZ");
+  displayHisto(show_jet2D_ptRH,h2_pjet_ptRH,"2ndjet2D_ptRH","COLZ");
+
+  displayHisto(show_jet_vs_jet_genPt,h2_jet_vs_jet_genPt,"jet_vs_jet_genPt","COLZ");
   //if (show_pho_vs_jet_recoPtPF) displayHisto(h2_pho_vs_jet_recoPtPF,"pho_vs_jet_recoPtPF","COLZ");
   //if (show_pho_vs_jet_recoPtRH) displayHisto(h2_pho_vs_jet_recoPtRH,"pho_vs_jet_recoPtRH","COLZ");
-  if (show_jet_vs_jet_recoEta) displayHisto(h2_jet_vs_jet_recoEta,"jet_vs_jet_recoEta","COLZ");
+  displayHisto(show_jet_vs_jet_recoEta,h2_jet_vs_jet_recoEta,"jet_vs_jet_recoEta","COLZ");
 
   /*
   if (show_jet_energy_PF_over_Gen_sideBySide) {
@@ -348,15 +355,15 @@ void analyzePFDiJetTree(TString inpFileName,
 
 // ------------------------------------------------------
 
-void displayHisto(TH1D* h, TString tag, TString drawOpt) {
+void displayHisto(int show, TH1D* h, TString tag, TString drawOpt)
+{
+  bool isBatch= gROOT->IsBatch();
+  if (!show && !saveCollection) return;
+  if (!show &&  saveCollection) gROOT->SetBatch(true);
+
   TString canvName="c_" + tag;
   TCanvas *c=new TCanvas(canvName,canvName,600,600);
   h->Draw(drawOpt);
-  if (0) {
-    TText *txt= new TText(0.2,0.75,"dijet (no eta req)");
-    txt->SetNDC(true);
-    txt->Draw();
-  }
   c->Update();
   TPaveStats *stats= (TPaveStats*)c->GetPrimitive("stats");
   if (stats) {
@@ -368,11 +375,20 @@ void displayHisto(TH1D* h, TString tag, TString drawOpt) {
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
 #endif
+
+  if (saveCollection) collector.Add(h,c);
+  if (!show && saveCollection) gROOT->SetBatch(isBatch);
 }
 
 // ------------------------------------------------------
 
-void displayHisto(TH2D* h, TString tag, TString drawOpt, int drawXeqY) {
+void displayHisto(int show,
+		  TH2D* h, TString tag, TString drawOpt, int drawXeqY)
+{
+  bool isBatch= gROOT->IsBatch();
+  if (!show && !saveCollection) return;
+  if (!show &&  saveCollection) gROOT->SetBatch(true);
+
   TString canvName="c_" + tag;
   TCanvas *c=new TCanvas(canvName,canvName,600,600);
 #ifdef ColorPalettes_HH
@@ -397,16 +413,20 @@ void displayHisto(TH2D* h, TString tag, TString drawOpt, int drawXeqY) {
       std::cout << "\tcould not draw x=y line\n";
     }
   }
-  if (0) {
-    TText *txt= new TText(0.2,0.75,"dijet (no eta req)");
-    txt->SetNDC(true);
-    txt->Draw();
-  }
   c->Update();
+  TPaveStats *stats= (TPaveStats*)c->GetPrimitive("stats");
+  if (stats) {
+    stats->SetY1NDC(0.7);
+    stats->SetY2NDC(0.85);
+    c->Update();
+  }
 #ifdef helper_HH
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
 #endif
+
+  if (saveCollection) collector.Add(h,c);
+  if (!show &&  saveCollection) gROOT->SetBatch(isBatch);
 }
 
 // ------------------------------------------------------

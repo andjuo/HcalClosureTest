@@ -28,6 +28,8 @@
 #include <vector>
 #include <iostream>
 
+#include "HistoCollector.h"
+
 //
 //  numerical constants
 //
@@ -79,20 +81,6 @@ int GetEmptyTowers(const GammaJetFitter_t &fitter,
 		   int weighted=1,
 		   double minWeight=0., int fractionFromMax=1,
 		   std::vector<Double_t> *towerWeightCount=NULL);
-
-// -----------------------------------------------------------
-
-int SaveVectorsToFile(TString fName,
-		      const std::vector<TH1D*> &histos1D,
-		      const std::vector<TH2D*> &histos2D,
-		      const std::vector<TCanvas*> &canvasV,
-		      const std::vector<TString> &knownMessages,
-		      int msgLineCount, ...);
-
-
-// -----------------------------------------------------------
-
-std::vector<TString> packMessages(int msgLineCount, ...);
 
 // -----------------------------------------------------------
 // ---------------------------------------------------------
@@ -421,10 +409,7 @@ class GammaJetFitter_t : public TObject {
 				  const std::vector<Double_t> *err=NULL) const;
 
   int SaveInfoToFile(TString fNameTag,
-		     const std::vector<TH1D*> &histos1D,
-		     const std::vector<TH2D*> &histos2D,
-		     const std::vector<TCanvas*> &canvasV,
-		     const std::vector<TString> &knownMessages) const;
+		     HistoCollector_t &hc_inp) const;
 
  protected:
   // actual data

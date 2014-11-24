@@ -476,24 +476,12 @@ TH1D* GammaJetFitter_t::createIEtaHistoFromVector
 
 // ----------------------------------------------------------------
 
-int GammaJetFitter_t::SaveInfoToFile
-             (TString fNameTag,
-	      const std::vector<TH1D*> &histos1D_inp,
-	      const std::vector<TH2D*> &histos2D,
-	      const std::vector<TCanvas*> &canvasV,
-	      const std::vector<TString> &knownMessages) const
+int GammaJetFitter_t::SaveInfoToFile(TString fNameTag,
+				     HistoCollector_t &hc_inp) const
 {
+
   if ((fNameTag.Length()>0) && (fNameTag[0]!='_')) fNameTag.Prepend("_");
   TString fName=Form("cfGammaJet%s.root",fNameTag.Data());
-
-  std::vector<TH1D*> histos1D;
-  histos1D.reserve(histos1D_inp.size()+3);
-  for (unsigned int i=0; i<histos1D_inp.size(); ++i) {
-    histos1D.push_back(histos1D_inp[i]);
-  }
-
-  histos1D.push_back(fHistoDerivedCoefs);
-  histos1D.push_back(fHistoIniCoefs);
 
   std::vector<Double_t> locFixedTowers(NUMTOWERS);
   for (unsigned int i=0; i<fFixedTowers.size(); i++) {
@@ -503,10 +491,16 @@ int GammaJetFitter_t::SaveInfoToFile
   TH1D* hFixedTowers= createIEtaHistoFromVector("hFixedTowers","fixed towers",
 						locFixedTowers);
   hFixedTowers->SetStats(0);
-  histos1D.push_back(hFixedTowers);
 
-  if (!SaveVectorsToFile(fName,histos1D,histos2D,
-			 canvasV, knownMessages,0)) {
+  HistoCollector_t hc(hc_inp);
+
+  hc.Add(fHistoDerivedCoefs);
+  hc.Add(fHistoIniCoefs);
+  hc.Add(hFixedTowers);
+
+  hc.Add(Form("fittingProcedure=%d",fFittingProcedure));
+
+  if (!hc.SaveToFile(fName)) {
     std::cout << "called from GammaJetFitter_t::SaveInfoToFile\n";
     return 0;
   }
@@ -619,80 +613,6 @@ int GetEmptyTowers(const GammaJetFitter_t &fitter,
   }
 
   return 1;
-}
-
-// ----------------------------------------------------------------
-
-int SaveVectorsToFile(TString fName,
-		      const std::vector<TH1D*> &histos1D,
-		      const std::vector<TH2D*> &histos2D,
-		      const std::vector<TCanvas*> &canvasV,
-		      const std::vector<TString> &knownMessages,
-		      int msgLineCount, ...)
-{
-  TFile fout(fName,"recreate");
-  if (!fout.IsOpen()) {
-    std::cout << "SaveVectorsToFile(" << fName
-	      << "): failed to create the file\n";
-    return 0;
-  }
-  fout.cd();
-
-  for (unsigned int i=0; i<histos1D.size(); ++i) histos1D[i]->Write();
-  for (unsigned int i=0; i<histos2D.size(); ++i) histos2D[i]->Write();
-  for (unsigned int i=0; i<canvasV.size(); ++i) canvasV[i]->Write();
-
-  if ((knownMessages.size()>0) || (msgLineCount>0)) {
-    TObjString ostr;
-    ostr.Write("info_fields_follow");
-
-    for (unsigned int i=0; i<knownMessages.size(); ++i) {
-      ostr.Write(knownMessages[i]);
-    }
-
-    if (msgLineCount>0) {
-      va_list vl;
-      va_start(vl,msgLineCount);
-      for (int i=0; i<msgLineCount; ++i) {
-	typedef const char *constCharPtr;
-	TString temp= TString(va_arg(vl,constCharPtr));
-	ostr.Write(temp);
-      }
-      va_end(vl);
-    }
-  }
-
-  // put time stamp
-  time_t ltime;
-  ltime=time(NULL);
-  TString str = TString(asctime(localtime(&ltime)));
-  if (str[str.Length()-1]=='\n') str.Remove(str.Length()-1,1);
-  TObjString date(str);
-  date.Write(str.Data());
-
-  fout.Close();
-  std::cout << "File <" << fout.GetName() << "> created\n";
-  return 1;
-
-}
-
-// ----------------------------------------------------------------
-
-std::vector<TString> packMessages(int msgLineCount, ...)
-{
-  std::vector<TString> knownMessages;
-  if (msgLineCount>0) {
-    knownMessages.reserve(msgLineCount);
-    va_list vl;
-    va_start(vl,msgLineCount);
-    for (int i=0; i<msgLineCount; ++i) {
-      typedef const char *constCharPtr;
-      TString temp= TString(va_arg(vl,constCharPtr));
-      knownMessages.push_back(temp);
-    }
-    va_end(vl);
-  }
-  return knownMessages;
 }
 
 // ----------------------------------------------------------------

@@ -30,6 +30,7 @@ void printVec(const char *msg, const std::vector<T> &v) {
 
 // -----------------------------------------------
 
+#ifndef HistoCollector_H
 inline
 void SaveCanvas(TCanvas* canv, const TString &canvName, TString destDir="plots") {
   gSystem->mkdir(destDir,kTRUE);
@@ -47,6 +48,7 @@ void SaveCanvas(TCanvas* canv, const TString &canvName, TString destDir="plots")
   canv->SaveAs(saveName);
   return;
 }
+#endif
 
 // -----------------------------------------------
 

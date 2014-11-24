@@ -5,6 +5,7 @@
 #include <TLine.h>
 //#include "colorPalettes.hh"
 #include "ComparisonPlot.hh"
+#include "../interface/HistoCollector.h"
 #include "helper.h"
 
 // ------------------------------------------------------
@@ -28,8 +29,16 @@ inline void prepareHisto(TH2D *h) {
 // ------------------------------------------------------
 // ------------------------------------------------------
 
-void displayHisto(TH1D* h, TString tag, TString drawOpt="LPE");
-void displayHisto(TH2D* h, TString tag, TString drawOpt="COLZ", int drawXeqY=1);
+HistoCollector_t collector;
+int saveCollection=0;
+
+// ----------------
+
+
+void displayHisto(int show, TH1D* h, TString tag, TString drawOpt="LPE");
+void displayHisto(int show,
+		  TH2D* h, TString tag, TString drawOpt="COLZ", int drawXeqY=1);
+
 void displayHistoRatio(TH1D *h1, TString label1, TH1D *h2, TString label2,
 		       TString xAxisLabel, TString yAxisLabel,
 		       TString tag,
@@ -41,17 +50,28 @@ void displayHistoRatio(TH1D *h1, TString label1, TH1D *h2, TString label2,
 void analyzePFGammaJetTree(TString inpFileName,
 			   Long64_t maxEntries=-1,
 			   double extraWeightFactor=-1.,
-			   TString plotOutDir_user="") {
+			   TString plotOutDir_user="",
+			   int saveCollection_user=-1) {
 
 #ifdef helper_HH
   if (plotOutDir_user.Length()>0) plotOutDir= plotOutDir_user;
 #endif
+  if (saveCollection_user>=0) saveCollection=saveCollection_user;
+
+  collector.Clear();
 
   // book histograms
   double cPI= 4*atan(1);
   int show_dPhi=0;
   TH1D *h1_dPhi= new TH1D("h1_dPhi","#Delta#Phi;#Delta#Phi;count",100,-2*cPI,2*cPI);
   prepareHisto(h1_dPhi);
+
+  int show_pho_vs_jet_phi=1;
+  TH2D *h2_pho_vs_jet_phi= new TH2D("h2_pho_jet_phi",
+		  "#Phi correlation after selection;#phi_{#gamma};#phi_{jet}",
+				 13,-1.5*cPI,1.5*cPI,
+				 13,-1.5*cPI,1.5*cPI);
+  prepareHisto(h2_pho_vs_jet_phi);
 
   double c_pt_max=500;
   double c_energy_max=1500;
@@ -226,6 +246,7 @@ void analyzePFGammaJetTree(TString inpFileName,
 			 ecalE+hcalE_noRecHits, inpData.getHcalEMap(1,1e-4));
 
     h1_dPhi->Fill( dt->GetTagPhi() - dt->GetProbePhi() , w);
+    h2_pho_vs_jet_phi->Fill( inpData.tagPho_phi, inpData.ppfjet_phi, w);
     h1_dPt_PF->Fill( inpData.tagPho_pt - inpData.ppfjet_pt , w);
     h1_jet_tightID->Fill( inpData.passTightJetID(1), w);
     h1_jet_energyGen->Fill( inpData.ppfjet_genE, w);
@@ -294,29 +315,26 @@ void analyzePFGammaJetTree(TString inpFileName,
 
   std::cout << "nEntries=" << nEntries << ", passedCount=" << passedCount << "\n";
 
-  if (show_dPhi) displayHisto(h1_dPhi,"dPhi","LPE");
-  if (show_dPt_PF) displayHisto(h1_dPt_PF, "dPt_PF","LPE");
-  if (show_jet_tightID) displayHisto(h1_jet_tightID,"jet_tightID","LPE");
-  if (show_jet_energy_PF_over_Gen) {
-    displayHisto(h1_jet_energy_PFoverGen,"e_PFoverGen","hist");
-    displayHisto(h1_jet_energy_RHoverGen,"e_RHoverGen","hist");
-  }
-  if (show_jet_energy_PF_over_Gen_divScale) {
-    displayHisto(h1_jet_energy_PFoverGen_divScale,"e_PFoverGen_divScale","hist");
-    displayHisto(h1_jet_energy_RHoverGen_divScale,"e_RHoverGen_divScale","hist");
-  }
-  if (show_jet_pT_PF_over_Gen) {
-    displayHisto(h1_jet_pT_PFoverGen,"pT_PFoverGen","hist");
-    displayHisto(h1_jet_pT_RHoverGen,"pT_RHoverGen","hist");
-  }
+  displayHisto(show_dPhi, h1_dPhi,"dPhi","LPE");
+  displayHisto(show_pho_vs_jet_phi, h2_pho_vs_jet_phi,"pho_vs_jet_phi","COLZ");
+  displayHisto(show_dPt_PF, h1_dPt_PF, "dPt_PF","LPE");
+  displayHisto(show_jet_tightID, h1_jet_tightID,"jet_tightID","LPE");
+  displayHisto(show_jet_energy_PF_over_Gen, h1_jet_energy_PFoverGen,"e_PFoverGen","hist");
+  displayHisto(show_jet_energy_PF_over_Gen, h1_jet_energy_RHoverGen,"e_RHoverGen","hist");
 
-  if (show_pho2D_pt) displayHisto(h2_pho_pt,"pho2D_pt","COLZ");
-  if (show_jet2D_ptPF) displayHisto(h2_jet_ptPF,"jet2D_ptPF","COLZ");
-  if (show_jet2D_ptRH) displayHisto(h2_jet_ptRH,"jet2D_ptRH","COLZ");
-  if (show_pho_vs_jet_genPt) displayHisto(h2_pho_vs_jet_genPt,"pho_vs_jet_genPt","COLZ");
-  if (show_pho_vs_jet_recoPtPF) displayHisto(h2_pho_vs_jet_recoPtPF,"pho_vs_jet_recoPtPF","COLZ");
-  if (show_pho_vs_jet_recoPtRH) displayHisto(h2_pho_vs_jet_recoPtRH,"pho_vs_jet_recoPtRH","COLZ");
-  if (show_pho_vs_jet_recoEta) displayHisto(h2_pho_vs_jet_recoEta,"pho_vs_jet_recoEta","COLZ");
+  displayHisto(show_jet_energy_PF_over_Gen_divScale, h1_jet_energy_PFoverGen_divScale,"e_PFoverGen_divScale","hist");
+  displayHisto(show_jet_energy_PF_over_Gen_divScale, h1_jet_energy_RHoverGen_divScale,"e_RHoverGen_divScale","hist");
+
+  displayHisto(show_jet_pT_PF_over_Gen, h1_jet_pT_PFoverGen,"pT_PFoverGen","hist");
+  displayHisto(show_jet_pT_PF_over_Gen, h1_jet_pT_RHoverGen,"pT_RHoverGen","hist");
+
+  displayHisto(show_pho2D_pt, h2_pho_pt,"pho2D_pt","COLZ");
+  displayHisto(show_jet2D_ptPF, h2_jet_ptPF,"jet2D_ptPF","COLZ");
+  displayHisto(show_jet2D_ptRH, h2_jet_ptRH,"jet2D_ptRH","COLZ");
+  displayHisto(show_pho_vs_jet_genPt, h2_pho_vs_jet_genPt,"pho_vs_jet_genPt","COLZ");
+  displayHisto(show_pho_vs_jet_recoPtPF, h2_pho_vs_jet_recoPtPF,"pho_vs_jet_recoPtPF","COLZ");
+  displayHisto(show_pho_vs_jet_recoPtRH, h2_pho_vs_jet_recoPtRH,"pho_vs_jet_recoPtRH","COLZ");
+  displayHisto(show_pho_vs_jet_recoEta,h2_pho_vs_jet_recoEta,"pho_vs_jet_recoEta","COLZ");
 
   if (show_pho2D_ptMap) {
     for (int ibin=1; ibin<=h2_pho_ptMapCount->GetNbinsX(); ++ibin) {
@@ -327,7 +345,7 @@ void analyzePFGammaJetTree(TString inpFileName,
 	h2_pho_ptMap->SetBinContent(ibin,jbin, sum/cnt);
       }
     }
-    displayHisto(h2_pho_ptMap,"pho_ptMap","COLZ");
+    displayHisto(show_pho2D_ptMap, h2_pho_ptMap,"pho_ptMap","COLZ");
   }
 
   if (show_jet_energy_PF_over_Gen_sideBySide) {
@@ -339,12 +357,23 @@ void analyzePFGammaJetTree(TString inpFileName,
 		      "hist","hist");
   }
 
+  if (saveCollection) {
+    TString outFName=TString("saved_") + plotOutDir + TString(".root");
+    collector.Add("producedBy_analyzePFGammaJetTree");
+    collector.SaveToFile(outFName);
+  }
+
   return;
 }
 
 // ------------------------------------------------------
 
-void displayHisto(TH1D* h, TString tag, TString drawOpt) {
+void displayHisto(int show, TH1D* h, TString tag, TString drawOpt)
+{
+  bool isBatch= gROOT->IsBatch();
+  if (!show && !saveCollection) return;
+  if (!show &&  saveCollection) gROOT->SetBatch(true);
+
   TString canvName="c_" + tag;
   TCanvas *c=new TCanvas(canvName,canvName,600,600);
   h->Draw(drawOpt);
@@ -359,11 +388,20 @@ void displayHisto(TH1D* h, TString tag, TString drawOpt) {
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
 #endif
+
+  if (saveCollection) collector.Add(h,c);
+  if (!show && saveCollection) gROOT->SetBatch(isBatch);
 }
 
 // ------------------------------------------------------
 
-void displayHisto(TH2D* h, TString tag, TString drawOpt, int drawXeqY) {
+void displayHisto(int show,
+		  TH2D* h, TString tag, TString drawOpt, int drawXeqY)
+{
+  bool isBatch= gROOT->IsBatch();
+  if (!show && !saveCollection) return;
+  if (!show &&  saveCollection) gROOT->SetBatch(true);
+
   TString canvName="c_" + tag;
   TCanvas *c=new TCanvas(canvName,canvName,600,600);
 #ifdef ColorPalettes_HH
@@ -399,13 +437,17 @@ void displayHisto(TH2D* h, TString tag, TString drawOpt, int drawXeqY) {
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
 #endif
+
+  if (saveCollection) collector.Add(h,c);
+  if (!show &&  saveCollection) gROOT->SetBatch(isBatch);
 }
 
 // ------------------------------------------------------
 
 void displayHistoRatio(TH1D *h1, TString label1, TH1D *h2, TString label2,
 		       TString xAxisLabel, TString yAxisLabel, TString tag,
-		       TString drawOpt1, TString drawOpt2) {
+		       TString drawOpt1, TString drawOpt2)
+{
 #ifndef ComparisonPlot_HH
   std::cout << "displayHistoRatio: ComparisonPlot.hh is not included\n";
   return;

@@ -1,7 +1,9 @@
 #include "link_GammaJetFit.h"
 #include "link_GammaJetFitAnalyzer.h"
 #include <TCanvas.h>
+#include "../interface/HistoCollector.h"
 #include "helper.h"
+
 
 void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 		       Long64_t maxEntries=-1,
@@ -10,12 +12,9 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 
   GammaJetCuts_t cuts;
   GammaJetFitter_t fitter;
+  HistoCollector_t collector;
 
   //fitter.SetFittingProcedure(1); // 0 - gammaJet, 1 - dijet
-
-  std::vector<TH1D*> saveHistos1D_vec;
-  std::vector<TH2D*> saveHistos2D_vec;
-  std::vector<TCanvas*> saveCanvas_vec;
 
   int nBins=50;
   double etMax=200;
@@ -41,8 +40,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     hTowCount->Draw("LPE");
     cTowCount->Update();
 
-    saveHistos1D_vec.push_back(hTowCount);
-    saveCanvas_vec.push_back(cTowCount);
+    collector.Add(hTowCount,cTowCount);
     //return;
   }
 
@@ -83,9 +81,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 		    h1_corr,"corr",kBlue,"LP");
       cx->Update();
 
-      saveHistos1D_vec.push_back(h1_uncorr);
-      saveHistos1D_vec.push_back(h1_corr);
-      saveCanvas_vec.push_back(cx);
+      collector.Add(h1_uncorr,h1_corr,cx);
     }
     return;
   }
@@ -112,9 +108,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 		  h1_corr,"corr",kBlue,"LP");
     cx->Update();
 
-    saveHistos1D_vec.push_back(h1_uncorr);
-    saveHistos1D_vec.push_back(h1_corr);
-    saveCanvas_vec.push_back(cx);
+    collector.Add(h1_uncorr,h1_corr,cx);
     return;
   }
 
@@ -127,6 +121,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     TCanvas *cx=new TCanvas("cxTFP","cxTFP",600,600);
     h2->Draw("COLZ");
     cx->Update();
+    collector.Add(h2,cx);
     //return;
   }
   if (0) {
@@ -137,6 +132,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     TCanvas *cy=new TCanvas("cyTFP","cyTFP",600,600);
     h2Norm->Draw("COLZ");
     cy->Update();
+    collector.Add(h2Norm,cy);
     //return;
   }
 
@@ -159,8 +155,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     hCoef->Draw("hist");
     cx->Update();
 
-    saveHistos1D_vec.push_back(hCoef);
-    saveCanvas_vec.push_back(cx);
+    collector.Add(hCoef,cx);
   }
 
   if (1) {
@@ -183,10 +178,8 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     h2EtVsEt_corr->Draw("COLZ");
     cEt1->Update();
 
-    saveHistos2D_vec.push_back(h2EtVsEt_unCorr);
-    saveHistos2D_vec.push_back(h2EtVsEt_corr);
-    saveCanvas_vec.push_back(cEt0);
-    saveCanvas_vec.push_back(cEt1);
+    collector.Add(h2EtVsEt_unCorr, cEt0);
+    collector.Add(h2EtVsEt_corr, cEt1);
   }
 
   if (0) {
@@ -208,6 +201,9 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     TCanvas *cEt1=new TCanvas("cTowE1","cTowE1",600,600);
     h2TowerEn_corr->Draw("COLZ");
     cEt1->Update();
+
+    collector.Add(h2TowerEn_unCorr,cEt0);
+    collector.Add(h2TowerEn_corr,cEt1);
   }
 
   if (0) {
@@ -215,13 +211,11 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
     TH2D* h2=anObj.plot_TowerFitProfile("h2TowFittedProfile",
 					"tower fit profile",
 					0, 20, 0., 2., &hcalCorrCf);
-    saveHistos2D_vec.push_back(h2);
     TCanvas *cx=new TCanvas("cxTFPfitted","cxTFPfitted",600,600);
     h2->Draw("COLZ");
     cx->Update();
 
-    saveHistos2D_vec.push_back(h2);
-    saveCanvas_vec.push_back(cx);
+    collector.Add(h2,cx);
     //return;
   }
 
@@ -247,9 +241,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 		    h1_corr,"corr",kBlue,"LP");
       cx->Update();
 
-      saveHistos1D_vec.push_back(h1_uncorr);
-      saveHistos1D_vec.push_back(h1_corr);
-      saveCanvas_vec.push_back(cx);
+      collector.Add(h1_uncorr,h1_corr,cx);
     }
   }
 
@@ -275,28 +267,28 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 		  h1_corr,"corr",kBlue,"LP");
     cx->Update();
 
-    saveHistos1D_vec.push_back(h1_uncorr);
-    saveHistos1D_vec.push_back(h1_corr);
-    saveCanvas_vec.push_back(cx);
+    collector.Add(h1_uncorr,h1_corr,cx);
   }
 
   if (1) {
-    fitter.SaveInfoToFile(outFileNameTag,
-			  saveHistos1D_vec,
-			  saveHistos2D_vec,
-			  saveCanvas_vec,
-			  packMessages(2,fname.Data(),
-				       Form("maxEntries=%ld",long(maxEntries)))
-			  );
+    collector.Add(packMessages(3,"producedBy runGammaJetFitter",
+			       fname.Data(),
+			       Form("maxEntries=%ld",long(maxEntries))));
+    if (!fitter.SaveInfoToFile(outFileNameTag,collector)) {
+      std::cout << "error saving info\n";
+    }
   }
 
   if (1) {
+    collector.SaveCanvases(outFileNameTag);
+    /*
     TString destDir="plots_" + outFileNameTag;
     for (unsigned int i=0; i<saveCanvas_vec.size(); ++i) {
       TString figName="fig-" + outFileNameTag + TString("-") +
 	TString(saveCanvas_vec[i]->GetName());
       SaveCanvas(saveCanvas_vec[i],figName,destDir);
     }
+    */
   }
 
   if (fitter.GetFittingProcedure()!=0) {
