@@ -754,14 +754,17 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 
     // Check selection
     int failSelPF = 0;
-    
-    if (pfjet_probe.scaledEt() < jetEtMin_) failSelPF |= 1;
-    if (calc_dPhi(photon_tag,pfjet_probe) < photonJetDPhiMin_) failSelPF |= 2;
-    if (deltaR(photon_tag,pfjet_probe.jet())<0.5) failSelPF |= 4;
-    if (pf_2ndjet.isValid() && (pf_2ndjet.scaledEt() > jet2EtMax_))
-      failSelPF |= 8;
-    if (pf_3rdjet.isValid() && (pf_3rdjet.scaledEt() > jet3EtMax_))
-      failSelPF |= 16;
+
+    if (!pfjet_probe.isValid()) failSelPF |= 1;
+    else {
+      if (pfjet_probe.scaledEt() < jetEtMin_) failSelPF |= 2;
+      if (calc_dPhi(photon_tag,pfjet_probe) < photonJetDPhiMin_) failSelPF |= 3;
+      if (deltaR(photon_tag,pfjet_probe.jet())<0.5) failSelPF |= 4;
+      if (pf_2ndjet.isValid() && (pf_2ndjet.scaledEt() > jet2EtMax_))
+	failSelPF |= 5;
+      if (pf_3rdjet.isValid() && (pf_3rdjet.scaledEt() > jet3EtMax_))
+	failSelPF |= 6;
+    }
 
     if (!failSelPF) {
       // a good event
