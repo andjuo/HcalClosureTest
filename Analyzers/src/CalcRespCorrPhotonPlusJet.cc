@@ -733,20 +733,10 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     std::set<PFJetCorretPair, PFJetCorretPairComp> pfjetcorretpairset;
     for(reco::PFJetCollection::const_iterator it=pfjets->begin(); it!=pfjets->end(); ++it) {
       const reco::PFJet* jet=&(*it);
-      //double minDr=99999;
-      //double dR= deltaR(photon_tag,jet);
-      //if (dR < minDr) minDr=dR;
-      //if(minDr<0.5) continue;
-      // shorter version
-      if ((deltaR(photon_tag,jet)<0.5) &&
-	  (it!=pfjets->begin())) // do not allow photon to be inside leading jet
-	  continue;
-      //int index = it-pfjets->begin();
-      //edm::RefToBase<reco::Jet> jetRef(edm::Ref<PFJetCollection>(pfjets,index));
-      //reco::PFJetRef jetRef = it->castTo<reco::PFJetRef>();
+      // do not let the jet to be close to the tag photon
+      if (deltaR(photon_tag,jet)<0.5) continue;
       double jec = correctorPF->correction(*it, iEvent, evSetup);
-      //cout<<index<<'\t'<<jec<<'\t'<<it->et()<<'\t'<<it->pt()<<endl;
-      pfjetcorretpairset.insert( PFJetCorretPair(jet, jec));//correctorPF->correction(jet->p4())) );
+      pfjetcorretpairset.insert( PFJetCorretPair(jet, jec));
     }
 
     PFJetCorretPair pfjet_probe;
