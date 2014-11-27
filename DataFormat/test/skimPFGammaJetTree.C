@@ -38,8 +38,6 @@ void skimPFGammaJetTree(TString inpFileName,
     if (iEntry%10000==0) std::cout << " ... reading entry " << iEntry << "\n";
     //std::cout << "ientry=" << iEntry << "\n";
 
-    passedCount++;
-
     aux.SetEventNo(inpData.EventNumber);
     aux.SetRunNo(inpData.RunNumber);
     aux.SetGenE(inpData.tagPho_genEnergy,inpData.ppfjet_genE);
@@ -51,6 +49,18 @@ void skimPFGammaJetTree(TString inpFileName,
     double hcalE_noRecHits= inpData.getSumHcalE_trackDiffEcal(1);
     dt->SetProbeEtaPhiEn(inpData.ppfjet_eta, inpData.ppfjet_phi,
 			 ecalE+hcalE_noRecHits, inpData.getHcalEMap(1,1e-4));
+
+    if (0)
+    if (fabs(dt->CalcDiffEt())/dt->GetTagEt() > 0.1) {
+      std::cout << "event iEntry=" << iEntry << ", dEt/tagEt= "
+		<< dt->CalcDiffEt() << "/" << dt->GetTagEt() << " = "
+		<< (dt->CalcDiffEt()/dt->GetTagEt())
+		<< " .. skipping\n";
+      continue;
+    }
+
+    passedCount++;
+
     tree->Fill();
   }
 
