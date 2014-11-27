@@ -449,33 +449,6 @@ TH1D* GammaJetFitter_t::createHistoFromMinuitParameters
 
 // ----------------------------------------------------------------
 
-TH1D* GammaJetFitter_t::createIEtaHistoFromVector
-  (TString histoName, TString histoTitle,
-   const std::vector<Double_t> &vec,
-   const std::vector<Double_t> *errVec) const
-{
-  if (int(vec.size())!=NUMTOWERS) {
-    std::cout << "GammaJetFitter_t::createIEtaHistoFromVector: wrong size."
-	      << " NUMTOWERS=" << NUMTOWERS << ", vec.size=" << vec.size()
-	      << std::endl;
-    return NULL;
-  }
-    // return the results
-  TH1D* histo=new TH1D(histoName,histoTitle,
-		       NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
-  histo->SetDirectory(0);
-  for(unsigned int i=0; i<vec.size(); i++) {
-    //int iEta= i-MAXIETA;
-    Double_t val = vec[i];
-    Double_t error = (errVec) ? errVec->at(i) : 0.;
-    histo->SetBinContent(i+1, val);
-    histo->SetBinError(i+1, error);
-  }
-  return histo;
-}
-
-// ----------------------------------------------------------------
-
 int GammaJetFitter_t::SaveInfoToFile(TString fNameTag,
 				     HistoCollector_t &hc_inp) const
 {
@@ -483,13 +456,8 @@ int GammaJetFitter_t::SaveInfoToFile(TString fNameTag,
   if ((fNameTag.Length()>0) && (fNameTag[0]!='_')) fNameTag.Prepend("_");
   TString fName=Form("cfGammaJet%s.root",fNameTag.Data());
 
-  std::vector<Double_t> locFixedTowers(NUMTOWERS);
-  for (unsigned int i=0; i<fFixedTowers.size(); i++) {
-    int idx= fFixedTowers[i] + MAXIETA;
-    locFixedTowers[idx]=1.;
-  }
   TH1D* hFixedTowers= createIEtaHistoFromVector("hFixedTowers","fixed towers",
-						locFixedTowers);
+						fFixedTowers);
   hFixedTowers->SetStats(0);
 
   HistoCollector_t hc(hc_inp);
@@ -613,6 +581,60 @@ int GetEmptyTowers(const GammaJetFitter_t &fitter,
   }
 
   return 1;
+}
+
+// ----------------------------------------------------------------
+
+TH1D* createIEtaHistoFromVector(TString histoName, TString histoTitle,
+				const std::vector<Double_t> &vec,
+				const std::vector<Double_t> *errVec)
+{
+  if (int(vec.size())!=NUMTOWERS) {
+    std::cout << "createIEtaHistoFromVector(Double_t): wrong size."
+	      << " NUMTOWERS=" << NUMTOWERS << ", vec.size=" << vec.size()
+	      << std::endl;
+    return NULL;
+  }
+    // return the results
+  TH1D* histo=new TH1D(histoName,histoTitle,
+		       NUMTOWERS,-MAXIETA-0.5,MAXIETA+0.5);
+  histo->SetDirectory(0);
+  for(unsigned int i=0; i<vec.size(); i++) {
+    //int iEta= i-MAXIETA;
+    Double_t val = vec[i];
+    Double_t error = (errVec) ? errVec->at(i) : 0.;
+    histo->SetBinContent(i+1, val);
+    histo->SetBinError(i+1, error);
+  }
+  return histo;
+}
+
+// ----------------------------------------------------------------
+
+TH1D* createIEtaHistoFromVector(TString histoName, TString histoTitle,
+				const std::vector<Int_t> &vec)
+{
+  std::vector<Double_t> locVec(NUMTOWERS);
+  if (int(vec.size()) == NUMTOWERS) {
+    // just copy
+    for (unsigned int i=0; i<vec.size(); i++) {
+      locVec[i] = vec[i];
+    }
+  }
+  else {
+    // assume it is a fixed towers array
+    std::cout << "createIEtaHistoFromVector(Int_t): assume fixed towers array "
+	      << " NUMTOWERS=" << NUMTOWERS << ", vec.size=" << vec.size()
+	      << std::endl;
+
+    for (unsigned int i=0; i<vec.size(); i++) {
+      int idx= vec[i] + MAXIETA;
+      locVec[idx]=1.;
+    }
+  }
+  TH1D* h= createIEtaHistoFromVector(histoName,histoTitle,locVec);
+  if (h) h->SetStats(0);
+  return h;
 }
 
 // ----------------------------------------------------------------

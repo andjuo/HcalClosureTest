@@ -83,6 +83,17 @@ int GetEmptyTowers(const GammaJetFitter_t &fitter,
 		   std::vector<Double_t> *towerWeightCount=NULL);
 
 // -----------------------------------------------------------
+
+TH1D* createIEtaHistoFromVector(TString histoName, TString histoTitle,
+				const std::vector<Double_t> &vec,
+				const std::vector<Double_t> *err=NULL);
+
+// -----------------------------------------------------------
+
+TH1D* createIEtaHistoFromVector(TString histoName, TString histoTitle,
+				const std::vector<Int_t> &vec);
+
+// -----------------------------------------------------------
 // ---------------------------------------------------------
 
 template <class type_t>
@@ -404,9 +415,6 @@ class GammaJetFitter_t : public TObject {
 
   TH1D* createHistoFromMinuitParameters
     (const TMinuit *xMinuit, TString histoName,TString histoTitle) const;
-  TH1D* createIEtaHistoFromVector(TString histoName, TString histoTitle,
-				  const std::vector<Double_t> &vec,
-				  const std::vector<Double_t> *err=NULL) const;
 
   int SaveInfoToFile(TString fNameTag,
 		     HistoCollector_t &hc_inp) const;
