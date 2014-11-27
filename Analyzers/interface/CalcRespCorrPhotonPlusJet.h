@@ -204,6 +204,19 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   TH2D* h_rechitspos_;
   TH1D* h_hbherecoieta_;
 
+  TH1D* h_passedSteps;
+  TH1D* h_nPho;
+  TH1D* h_nPho_good;
+  TH1D* h_nPFJets;
+  TH1D* h_nPFJets_sel;
+  TH1D* h_leadJetCorrEt;
+  TH1D* h_2ndleadJetCorrEt;
+  TH1D* h_3rdleadJetCorrEt;
+  TH1D* h_dRphojet;
+  TH1D* h_dphi;
+  TH1D* h_dphi_sel;
+  TH1D* h_pfrecoOgen_et;
+
   TTree* misc_tree_; // misc.information. Will be filled only once
   TTree* calo_tree_;
   TTree* pf_tree_;
