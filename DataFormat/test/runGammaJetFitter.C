@@ -1,6 +1,7 @@
 #include "link_GammaJetFit.h"
 #include "link_GammaJetFitAnalyzer.h"
 #include <TCanvas.h>
+#include <TLine.h>
 #include "../interface/HistoCollector.h"
 #include "helper.h"
 
@@ -33,11 +34,22 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 
   if (1) {
     GammaJetFitAnalyzer_t anObj(&fitter);
+    std::vector<Double_t> weights;
     TH1D *hTowCount=
       anObj.plot_TowerEntryCount("hTowerCount",
-				 "Events in towers;iEta_{tower};count",1);
+				 "Events in towers;iEta_{tower};count",1,
+				 0.,1,&weights);
     TCanvas *cTowCount= new TCanvas("cTowCount","cTowCount",600,600);
     hTowCount->Draw("LPE");
+    if (1) {
+      cTowCount->Update();
+      std::cout << "cTowCount->GetUxmin()= " << cTowCount->GetUxmin() << ".. "<< cTowCount->GetUxmax() << "\n";
+      double maxWeight= *std::max_element( weights.begin(), weights.end() );
+      double lineAt= minFraction * maxWeight;
+      TLine *line= new TLine(cTowCount->GetUxmin(),lineAt,
+			     cTowCount->GetUxmax(),lineAt);
+      line->Draw();
+    }
     cTowCount->Update();
 
     collector.Add(hTowCount,cTowCount);
