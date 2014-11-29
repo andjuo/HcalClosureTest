@@ -20,6 +20,7 @@
 #include <TFile.h>
 #include <TObjString.h>
 #include <TTree.h>
+#include <TBenchmark.h>
 
 #include <cmath>
 #include <algorithm> // std::find

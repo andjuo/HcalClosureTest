@@ -11,6 +11,8 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
 		       TString outFileNameTag="",
 		       double minFraction_user=-1.) {
 
+  gBenchmark->Start("runGammaJetFitter");
+
   GammaJetCuts_t cuts;
   GammaJetFitter_t fitter;
   HistoCollector_t collector;
@@ -18,7 +20,7 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
   //fitter.SetFittingProcedure(1); // 0 - gammaJet, 1 - dijet
 
   int nBins=50;
-  double etMax=200;
+  double etMax=500;
 
   if (!LoadGammaJetEvents(fname,cuts,fitter,maxEntries)) return;
   HERE("load ok");
@@ -306,4 +308,6 @@ void runGammaJetFitter(const TString fname="gjet_toy1_model2.root",
   if (fitter.GetFittingProcedure()!=0) {
     std::cout << "special fitting procedure: " << fitter.GetFittingProcedure() << "\n";
   }
+
+  gBenchmark->Show("runGammaJetFitter");
 }
