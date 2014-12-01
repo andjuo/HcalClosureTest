@@ -61,9 +61,27 @@ TArrayD convert(const std::vector<Double_t> &vec) {
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
+int GammaJetEventAuxInfo_t::SetPhotonQuality(int looseFlag, int tightFlag) {
+  fPhoQuality= -9;
+  if (!looseFlag && tightFlag) {
+    std::cout << "GammaJetEventAuxInfo_t::SetPhotonQuality: looseFlag is 0, "
+	      << " yet tightFlag is 1\n";
+    return 0;
+  }
+  int qual=0;
+  if (looseFlag) qual=1;
+  if (tightFlag) qual=2;
+  fPhoQuality= qual;
+  return 1;
+}
+
+// ----------------------------------------------------------------
+
 void GammaJetEventAuxInfo_t::Assign(const GammaJetEventAuxInfo_t &e) {
   fEventNo=e.fEventNo;
   fRunNo=e.fRunNo;
+  fPhoQuality=e.fPhoQuality;
+  fJetQuality=e.fJetQuality;
   fProbeHcalENoRecHits=e.fProbeHcalENoRecHits;
   fTagGenE=e.fTagGenE;
   fProbeGenE=e.fProbeGenE;
@@ -73,6 +91,8 @@ void GammaJetEventAuxInfo_t::Assign(const GammaJetEventAuxInfo_t &e) {
 
 std::ostream& operator<<(std::ostream& out, const GammaJetEventAuxInfo_t &e) {
   out << "eventNo=" << e.fEventNo << ", runNo=" << e.fRunNo;
+  out << ", photonQualityFlag=" << e.fPhoQuality;
+  out << ", jetTightIDFlag=" << e.fJetQuality;
   out << " hcalENoRecHits=" << e.fProbeHcalENoRecHits;
   std::cout << "genE= " << e.fTagGenE << " & " << e.fProbeGenE;
   return out;

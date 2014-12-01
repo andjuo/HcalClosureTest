@@ -41,6 +41,11 @@ void skimPFGammaJetTree(TString inpFileName,
     aux.SetEventNo(inpData.EventNumber);
     aux.SetRunNo(inpData.RunNumber);
     aux.SetGenE(inpData.tagPho_genEnergy,inpData.ppfjet_genE);
+    if (!aux.SetPhotonQuality(inpData.tagPho_idLoose, inpData.tagPho_idTight)){
+      std::cout << "photon quality error detected\n";
+      return;
+    }
+    aux.SetJetQuality(inpData.passTightJetID(1));
     dt->SetAuxInfo(aux);
 
     dt->SetTagEEtaPhi(inpData.tagPho_energy,

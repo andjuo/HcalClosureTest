@@ -155,12 +155,14 @@ Double_t calc_CorrHcalE(const TArrayD &hcalECorrCf,
 class GammaJetEventAuxInfo_t : public TObject {
 protected:
   Int_t fEventNo, fRunNo;
+  Int_t fPhoQuality, fJetQuality;
   Double_t fProbeHcalENoRecHits;
   Double_t fTagGenE, fProbeGenE;
 public:
 
   GammaJetEventAuxInfo_t(Int_t eventNo=-1, Int_t runNo=-1)
     : fEventNo(eventNo), fRunNo(runNo),
+    fPhoQuality(-1), fJetQuality(-1),
     fProbeHcalENoRecHits(0.),
     fTagGenE(0.),
     fProbeGenE(0.)
@@ -170,6 +172,8 @@ public:
     : TObject(e),
     fEventNo(e.fEventNo),
     fRunNo(e.fRunNo),
+    fPhoQuality(e.fPhoQuality),
+    fJetQuality(e.fJetQuality),
     fProbeHcalENoRecHits(e.fProbeHcalENoRecHits),
     fTagGenE(e.fTagGenE),
     fProbeGenE(e.fProbeGenE)
@@ -179,6 +183,14 @@ public:
   void SetEventNo(Int_t no) { fEventNo=no; }
   Int_t GetRunNo() const { return fRunNo; }
   void SetRunNo(Int_t no) { fRunNo=no; }
+  Int_t GetPhotonQuality() const { return fPhoQuality; }
+  int SetPhotonQuality(int looseFlag, int tightFlag);
+  bool IsTightIDPhoton() const { return (fPhoQuality==2) ? true : false; }
+  bool IsLooseIDPhoton() const { return (fPhoQuality>=1) ? true : false; }
+  void SetJetQuality(int tightFlag) { fJetQuality=tightFlag; }
+  Int_t GetJetQuality() const { return fJetQuality; }
+  bool IsTightIDJet() const { return fJetQuality; }
+
   Double_t GetProbeHcalENoRecHits() const { return fProbeHcalENoRecHits; }
   void SetProbeHcalENoRecHits(Double_t val) { fProbeHcalENoRecHits=val; }
   Double_t GetTagGenE() const { return fTagGenE; }
