@@ -5,6 +5,7 @@
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TCanvas.h>
+#include <TString.h>
 #include <vector>
 #include <iostream>
 
@@ -36,6 +37,13 @@ class HistoCollector_t {
 
   void Clear();
 
+  unsigned int CountTH1D() const { return fHistos1Dv.size(); }
+  unsigned int CountTH2D() const { return fHistos2Dv.size(); }
+  unsigned int CountCanvas() const { return fCanvasV.size(); }
+  TH1D* GetH1D(int idx) { return fHistos1Dv[idx]; }
+  TH1D* GetH1D(TString name);
+  TH2D* GetH2D(int idx) { return fHistos2Dv[idx]; }
+  TH2D* GetH2D(TString name);
   TCanvas* GetCanvas(int idx) const { return fCanvasV[idx]; }
 
   void Add(TH1D *h) { fHistos1Dv.push_back(h); }
@@ -51,6 +59,10 @@ class HistoCollector_t {
   
   int SaveToFile(TString fName);
   int SaveCanvases(TString outFileNameTag) const;
+
+  int LoadFromFile(TString fName,
+		   int loadHistos1D, int loadHistos2D, int loadCanvases,
+		   TString prependToNames="");
 };
 
 // -----------------------------------------------------------

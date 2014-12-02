@@ -7,6 +7,9 @@
 #include <TFile.h>
 #include <TObjString.h>
 #include <TSystem.h>
+#include <TDirectory.h>
+#include <TList.h>
+#include <TKey.h>
 
 #ifdef __localRun
 #ifdef __CINT__
@@ -63,6 +66,32 @@ void HistoCollector_t::Clear()
   fCanvasV.clear();
   fMsgV.clear();
   fTag.Clear();
+}
+
+// ----------------------------------------------------------------
+
+TH1D* HistoCollector_t::GetH1D(TString name) {
+  TH1D *h= NULL;
+  for (unsigned int i=0; !h && (i<fHistos1Dv.size()); i++) {
+    if (TString(fHistos1Dv[i]->GetName()) == name) {
+      h=fHistos1Dv[i];
+      //std::cout << "located at i=" << i << "\n";
+    }
+  }
+  return h;
+}
+
+// ----------------------------------------------------------------
+
+TH2D* HistoCollector_t::GetH2D(TString name) {
+  TH2D *h2= NULL;
+  for (unsigned int i=0; !h2 && (i<fHistos2Dv.size()); i++) {
+    if (TString(fHistos2Dv[i]->GetName()) == name) {
+      h2=fHistos2Dv[i];
+      //std::cout << "located at i=" << i << "\n";
+    }
+  }
+  return h2;
 }
 
 // ----------------------------------------------------------------
@@ -147,6 +176,79 @@ int HistoCollector_t::SaveCanvases(TString outFileNameTag) const
     SaveCanvas(fCanvasV[i],figName,destDir);
   }
   return int(fCanvasV.size());
+}
+
+// ----------------------------------------------------------------
+
+int HistoCollector_t::LoadFromFile(TString fName, int loadHistos1D,
+				   int loadHistos2D, int loadCanvases,
+				   TString prependToNames)
+{
+  this->Clear();
+
+  TFile fin(fName,"read");
+  if (!fin.IsOpen()) {
+    std::cout << "LoadFromFile(" << fName
+	      << "): failed to open the file\n";
+    return 0;
+  }
+  fin.cd();
+
+  int verb=1;
+  TDirectory *topDir = gDirectory;
+  TDirectory *sourceDir=topDir;
+  TList *subDirList=sourceDir->GetListOfKeys();
+  int count=subDirList->GetEntries();
+  std::cout << "There are " << count
+	    << " keys in main directory of file <" << fName << ">\n";
+  TIter subDirs(subDirList);
+  TKey *key=NULL;
+  int debug_count=-1;
+  while ( (key = (TKey*)subDirs()) ) {
+    const TString candName=key->GetName();
+    if (verb) std::cout << "candName=" << candName << "\n";
+    TObject *obj= key->ReadObj();
+    if ( loadHistos1D && obj->IsA()->InheritsFrom(TH1D::Class()) ) {
+      TH1D *h=(TH1D*)obj;
+      h->SetDirectory(0);
+      if (prependToNames.Length()) {
+	TString tmp=h->GetName();
+	h->SetName(prependToNames + tmp);
+      }
+      fHistos1Dv.push_back(h);
+      debug_count--; if (debug_count==0) break;
+    }
+    else if ( loadHistos2D && obj->IsA()->InheritsFrom(TH2D::Class()) ) {
+      TH2D *h2=(TH2D*)obj;
+      h2->SetDirectory(0);
+      if (prependToNames.Length()) {
+	TString tmp=h2->GetName();
+	h2->SetName(prependToNames + tmp);
+      }
+      fHistos2Dv.push_back(h2);
+      debug_count--; if (debug_count==0) break;
+    }
+    else if ( loadCanvases && obj->IsA()->InheritsFrom(TCanvas::Class()) ) {
+      TCanvas *canv=(TCanvas*)obj;
+      if (prependToNames.Length()) {
+	TString tmp=canv->GetName();
+	canv->SetName(prependToNames + tmp);
+      }
+      fCanvasV.push_back(canv);
+      debug_count--; if (debug_count==0) break;
+    }
+    else {
+      delete obj;
+    }
+  }
+  fin.Close();
+
+  std::cout << "from file <" << fin.GetName() << "> got:\n";
+  if (loadHistos1D) std::cout << " " << fHistos1Dv.size() << " TH1Ds\n";
+  if (loadHistos2D) std::cout << " " << fHistos2Dv.size() << " TH2Ds\n";
+  if (loadCanvases) std::cout << " " << fCanvasV.size() << " canvases\n";
+
+  return 1;
 }
 
 // ----------------------------------------------------------------
