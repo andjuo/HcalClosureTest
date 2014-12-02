@@ -16,7 +16,7 @@ process.GlobalTag.globaltag=autoCond['startup']
 process.load('HcalClosureTest.Analyzers.calcrespcorrphotonplusjet_cfi')
 
 # run over files
-process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_pionGun_CHS.root')
+process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('tree_QCD.root')
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
 process.calcrespcorrphotonplusjet.doGenJets = cms.bool(True)
@@ -30,9 +30,9 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
 # Load file list
 # Summer12_DR53X production G_Pt_XtoY
 import FWCore.Utilities.FileUtils as FileUtils
-listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
+#listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
 #listFileName='selection_tmp.txt'
-listFileName='fileInfo_pionGun.txt'
+listFileName='fileInfo_RelVal_5_3_14_QCD_flat_v6.txt'
 mylist = FileUtils.loadListFromFile(listFileName)
 # to add additional files from another list, define that list and
 # uncomment the next line
@@ -53,7 +53,7 @@ process.source = cms.Source("PoolSource",
 
 )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5000) )
 process.MessageLogger.cerr.FwkReport.reportEvery=cms.untracked.int32(1000)
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(False) )
 

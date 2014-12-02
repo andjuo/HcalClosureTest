@@ -155,6 +155,8 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   // parameters
   int debug_;                      // print debug statements
   edm::InputTag rhoCollection_;
+  edm::InputTag pfType1METColl, pfMETColl ;
+
   std::string photonCollName_;      // label for the photon collection
   std::string caloJetCollName_;     // label for the calo jet collection
   std::string caloJetCorrName_;     // label for the calo jet correction service
@@ -233,6 +235,9 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   float eventWeight_;
   int nPhotons_, nGenJets_;
   int nCaloJets_, nPFJets_;
+
+  /// MET info 
+  float met_value_, met_phi_, met_sumEt_ ;
 
   // photon info
   float rho2012_;
@@ -320,6 +325,9 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   float pf_thirdjet_et_;
   float pf_thirdjet_pt_, pf_thirdjet_p_, pf_thirdjet_px_, pf_thirdjet_py_;
   float pf_thirdjet_E_, pf_thirdjet_eta_, pf_thirdjet_phi_, pf_thirdjet_scale_;
+
+  //// MET info ////
+  
 
   // ------------------------------
   // helper functions

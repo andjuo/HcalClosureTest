@@ -6,6 +6,7 @@
 <use   name="RecoEgamma/EgammaTools"/>
 <use   name="FWCore/Framework"/>
 <use   name="JetMETCorrections/Objects"/>
+<use   name="JetMETCorrections/Type1MET"/>
 <use   name="Geometry/CaloGeometry"/>
 <use   name="Geometry/Records"/>
 <use   name="SimDataFormats/GeneratorProducts"/>
