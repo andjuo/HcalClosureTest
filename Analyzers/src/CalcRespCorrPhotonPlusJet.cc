@@ -17,6 +17,9 @@
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
 #include "FWCore/Common/interface/TriggerNames.h"
+#include "DataFormats/METReco/interface/METCollection.h"
+#include "DataFormats/METReco/interface/PFMET.h"
+#include "DataFormats/METReco/interface/PFMETCollection.h"
 
 #include "TTree.h"
 #include "TFile.h"
@@ -102,6 +105,8 @@ CalcRespCorrPhotonPlusJet::CalcRespCorrPhotonPlusJet(const edm::ParameterSet& iC
 {
   // set parameters
   debug_               = iConfig.getUntrackedParameter<int>("debug", 0);
+  pfMETColl            = iConfig.getParameter<edm::InputTag>("PFMETColl");
+  pfType1METColl       = iConfig.getParameter<edm::InputTag>("PFMETTYPE1Coll");
   rhoCollection_       = iConfig.getParameter<edm::InputTag>("rhoColl");
   photonCollName_      = iConfig.getParameter<std::string>("photonCollName");
   caloJetCollName_     = iConfig.getParameter<std::string>("caloJetCollName");
@@ -1385,16 +1390,26 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
       copy_leadingPfJetVars_to_pfJet2();
     }
     }
-
+    
     h_types_->Fill(types);
     h_ntypes_->Fill(ntypes);
-
-
+    
+    
     // calculate the jet resolution
     h_passedSteps->Fill(7);
     double jer= (ppfjet_genpt_==double(0)) ?
       0. : pfjet_probe.jet()->et()/ppfjet_genpt_;
     h_pfrecoOgen_et->Fill(jer, eventWeight_);
+    
+
+    ///// MET /////
+    edm::Handle<reco::PFMETCollection> pfmet_h;
+    //// iEvent.getByLabel(pfType1METColl, pfmet_h);
+    iEvent.getByLabel(pfMETColl, pfmet_h);
+    met_value_ = pfmet_h->begin()->et();
+    met_phi_   = pfmet_h->begin()->phi();
+    met_sumEt_ = pfmet_h->begin()->sumEt();
+
 
     // fill photon+jet variables
     pf_tree_->Fill();
@@ -1772,6 +1787,10 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     pf_tree_->Branch("pf_thirdjet_phi", &pf_thirdjet_phi_, "pf_thirdjet_phi/F");
     pf_tree_->Branch("pf_thirdjet_scale", &pf_thirdjet_scale_, "pf_thirdjet_scale/F");
   }
+
+  pf_tree_->Branch("met_value", &met_value_, "met_value/F");
+  pf_tree_->Branch("met_phi", &met_phi_, "met_phi/F");
+  pf_tree_->Branch("met_sumEt", &met_sumEt_, "met_sumEt/F");
 
   return;
   ////  std::cout << "End beginJob()" << std::endl;

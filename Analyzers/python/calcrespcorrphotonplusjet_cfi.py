@@ -8,6 +8,8 @@ calcrespcorrphotonplusjet = cms.EDAnalyzer(
     'CalcRespCorrPhotonPlusJet',
     caloJetCollName     = cms.string('ak5CaloJets'),
     rhoColl             = cms.InputTag("kt6PFJets","rho"),
+    PFMETColl           = cms.InputTag("pfMet"),
+    PFMETTYPE1Coll      = cms.InputTag("pfType1CorrectedMet"),
     photonCollName      = cms.string('photons'),
     caloJetCorrName     = cms.string('ak5CaloL2L3'),
     pfJetCollName       = cms.string('ak5PFJetsCHS'),
