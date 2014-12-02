@@ -226,6 +226,12 @@ public :
    Float_t         pf_thirdjet_eta;
    Float_t         pf_thirdjet_phi;
    Float_t         pf_thirdjet_scale;
+   Float_t         met_value;
+   Float_t         met_phi;
+   Float_t         met_sumEt;
+   Float_t         metType1_value;
+   Float_t         metType1_phi;
+   Float_t         metType1_sumEt;
 
    // List of branches
    TBranch        *b_photonTrig_fired;   //!
@@ -421,6 +427,12 @@ public :
    TBranch        *b_pf_thirdjet_eta;   //!
    TBranch        *b_pf_thirdjet_phi;   //!
    TBranch        *b_pf_thirdjet_scale;   //!
+   TBranch        *b_met_value;   //!
+   TBranch        *b_met_phi;   //!
+   TBranch        *b_met_sumEt;   //!
+   TBranch        *b_metType1_value;   //!
+   TBranch        *b_metType1_phi;   //!
+   TBranch        *b_metType1_sumEt;   //!
 
    pf_gammajettree(TString fname="");
    virtual ~pf_gammajettree();
@@ -672,6 +684,8 @@ int pf_gammajettree::Init(const TString &fname)
    pf_thirdjet_et=pf_thirdjet_pt=pf_thirdjet_p=0;
    pf_thirdjet_px=pf_thirdjet_py=pf_thirdjet_E=0;
    pf_thirdjet_eta=pf_thirdjet_phi=pf_thirdjet_scale=0;
+   met_value=met_phi=met_sumEt=0;
+   metType1_value=metType1_phi=metType1_sumEt=0;
 
    // Set branch addresses and branch pointers
    //if (!tree) return;
@@ -872,6 +886,12 @@ int pf_gammajettree::Init(const TString &fname)
    fChain->SetBranchAddress("pf_thirdjet_eta", &pf_thirdjet_eta, &b_pf_thirdjet_eta);
    fChain->SetBranchAddress("pf_thirdjet_phi", &pf_thirdjet_phi, &b_pf_thirdjet_phi);
    fChain->SetBranchAddress("pf_thirdjet_scale", &pf_thirdjet_scale, &b_pf_thirdjet_scale);
+   fChain->SetBranchAddress("met_value", &met_value, &b_met_value);
+   fChain->SetBranchAddress("met_phi", &met_phi, &b_met_phi);
+   fChain->SetBranchAddress("met_sumEt", &met_sumEt, &b_met_sumEt);
+   fChain->SetBranchAddress("metType1_value", &metType1_value, &b_metType1_value);
+   fChain->SetBranchAddress("metType1_phi", &metType1_phi, &b_metType1_phi);
+   fChain->SetBranchAddress("metType1_sumEt", &metType1_sumEt, &b_metType1_sumEt);
    Notify();
    return 1;
 }
