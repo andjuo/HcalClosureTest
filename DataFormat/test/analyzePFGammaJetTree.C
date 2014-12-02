@@ -384,6 +384,11 @@ void displayHisto(int show, TH1D* h, TString tag, TString drawOpt)
     stats->SetY2NDC(0.85);
     c->Update();
   }
+  if (show) {
+    double effSigma= calc_effSigma(h);
+    std::cout << "histogram " << h->GetName()<<", effSigma="<<effSigma<<"\n";
+  }
+
 #ifdef helper_HH
   TString figName="fig-" + tag;
   SaveCanvas(c,figName,plotOutDir);
