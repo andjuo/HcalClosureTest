@@ -14,6 +14,10 @@
 std::vector<TString> packMessages(int msgLineCount, ...);
 void SaveCanvas(TCanvas* canv, const TString &canvName, TString destDir="plots");
 
+// effective sigma of a distribution
+// A function by Chris Seez
+Double_t calc_effSigma(TH1 * hist);
+
 // -----------------------------------------------------------
 // -----------------------------------------------------------
 
