@@ -235,9 +235,11 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   float eventWeight_;
   int nPhotons_, nGenJets_;
   int nCaloJets_, nPFJets_;
+  ULong64_t nProcessed_;
 
   /// MET info 
   float met_value_, met_phi_, met_sumEt_ ;
+  float metType1_value_, metType1_phi_, metType1_sumEt_ ;
 
   // photon info
   float rho2012_;

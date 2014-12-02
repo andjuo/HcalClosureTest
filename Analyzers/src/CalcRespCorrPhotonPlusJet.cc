@@ -139,6 +139,7 @@ CalcRespCorrPhotonPlusJet::CalcRespCorrPhotonPlusJet(const edm::ParameterSet& iC
 
   // set it here to ensure the value is defined
   eventWeight_ = 1.0;
+  nProcessed_ = 0;
 }
 
 CalcRespCorrPhotonPlusJet::~CalcRespCorrPhotonPlusJet()
@@ -158,12 +159,11 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   // 2. At least one jet
   // 3. Trigger fired
   h_passedSteps->Fill(0);
+  nProcessed_++;
 
   // 1st. Get Photons //
   edm::Handle<reco::PhotonCollection> photons;
   iEvent.getByLabel(photonCollName_, photons);
-  h_nPho->Fill(photons->size());
-
   if(!photons.isValid()) {
     throw edm::Exception(edm::errors::ProductNotFound)
       << " could not find PhotonCollection named " << photonCollName_ << ".\n";
@@ -174,6 +174,8 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     if (debug_) std::cout << "no photons in the event\n";
     return;
   }
+
+  h_nPho->Fill(photons->size());
   nPhotons_= photons->size();
 
   ///////// Run Over Photons /////////
@@ -1404,11 +1406,29 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 
     ///// MET /////
     edm::Handle<reco::PFMETCollection> pfmet_h;
-    //// iEvent.getByLabel(pfType1METColl, pfmet_h);
     iEvent.getByLabel(pfMETColl, pfmet_h);
+    if (!pfmet_h.isValid()) {
+      throw edm::Exception(edm::errors::ProductNotFound)
+	<< " could not find " << pfMETColl << ".\n";
+      return;
+    }
     met_value_ = pfmet_h->begin()->et();
     met_phi_   = pfmet_h->begin()->phi();
     met_sumEt_ = pfmet_h->begin()->sumEt();
+
+    edm::Handle<reco::PFMETCollection> pfmetType1_h;
+    iEvent.getByLabel(pfType1METColl, pfmetType1_h);
+    if ( pfmetType1_h.isValid()) {
+      metType1_value_ = pfmetType1_h->begin()->et();
+      metType1_phi_   = pfmetType1_h->begin()->phi();
+      metType1_sumEt_ = pfmetType1_h->begin()->sumEt();
+    }
+    else {
+      // do we need an exception here?
+      metType1_value_ = -999.;
+      metType1_phi_   = -999.;
+      metType1_sumEt_ = -999.;
+    }
 
 
     // fill photon+jet variables
@@ -1459,23 +1479,6 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     h_dphi_sel=new TH1D("h_dphi_sel","dphi_sel;#Delta#phi(#gamma,j_{1});count",100,-4,4.);
     h_pfrecoOgen_et=new TH1D("h_pfrecoOgen_et","Leading jet resolution;#it{E}_{T}^{PF}/#it{E}_{T}^{gen};count",100,0,2);
 
-  }
-
-  // Save info about the triggers and other misc items
-  {
-    rootfile_->mkdir("miscItems");
-    rootfile_->cd("miscItems");
-    misc_tree_= new TTree("misc_tree","tree for misc.info");
-    misc_tree_->Branch("photonTriggerNames",&photonTrigNamesV_);
-    misc_tree_->Branch("jetTriggerNames",&jetTrigNamesV_);
-    // put time stamp
-    time_t ltime;
-    ltime=time(NULL);
-    TString str = TString(asctime(localtime(&ltime)));
-    if (str[str.Length()-1]=='\n') str.Remove(str.Length()-1,1);
-    TObjString date(str);
-    date.Write(str.Data());
-    rootfile_->cd();
   }
 
   // create the trees for the calo/pf jets
@@ -1791,6 +1794,9 @@ void CalcRespCorrPhotonPlusJet::beginJob()
   pf_tree_->Branch("met_value", &met_value_, "met_value/F");
   pf_tree_->Branch("met_phi", &met_phi_, "met_phi/F");
   pf_tree_->Branch("met_sumEt", &met_sumEt_, "met_sumEt/F");
+  pf_tree_->Branch("metType1_value", &metType1_value_, "metType1_value/F");
+  pf_tree_->Branch("metType1_phi", &metType1_phi_, "metType1_phi/F");
+  pf_tree_->Branch("metType1_sumEt", &metType1_sumEt_, "metType1_sumEt/F");
 
   return;
   ////  std::cout << "End beginJob()" << std::endl;
@@ -1800,12 +1806,6 @@ void CalcRespCorrPhotonPlusJet::beginJob()
 void 
 CalcRespCorrPhotonPlusJet::endJob() {
   ///  std::cout << "Start endJob()" << std::endl;
-
-  // write miscItems
-  rootfile_->cd();
-  rootfile_->cd("miscItems");
-  misc_tree_->Fill();
-  misc_tree_->Write();
 
   rootfile_->cd();
 
@@ -1847,6 +1847,33 @@ CalcRespCorrPhotonPlusJet::endJob() {
 
     pf_tree_->Write();
   }
+
+  // write miscItems
+  // Save info about the triggers and other misc items
+  {
+    rootfile_->cd();
+    rootfile_->mkdir("miscItems");
+    rootfile_->cd("miscItems");
+    misc_tree_= new TTree("misc_tree","tree for misc.info");
+    misc_tree_->Branch("ignoreHLT",&ignoreHLT_,"ignoreHLT/O");
+    misc_tree_->Branch("doCaloJets",&doCaloJets_,"doCaloJets/O");
+    misc_tree_->Branch("doPFJets",&doPFJets_,"doPFJets/O");
+    misc_tree_->Branch("doGenJets",&doGenJets_,"doGenJets/O");
+    misc_tree_->Branch("photonTriggerNames",&photonTrigNamesV_);
+    misc_tree_->Branch("jetTriggerNames",&jetTrigNamesV_);
+    misc_tree_->Branch("nProcessed",&nProcessed_,"nProcessed/l");
+    // put time stamp
+    time_t ltime;
+    ltime=time(NULL);
+    TString str = TString(asctime(localtime(&ltime)));
+    if (str[str.Length()-1]=='\n') str.Remove(str.Length()-1,1);
+    TObjString date(str);
+    date.Write(str.Data());
+    misc_tree_->Fill();
+    misc_tree_->Write();
+    rootfile_->cd();
+  }
+
   rootfile_->Close();
   ////  std::cout << "End endJob()" << std::endl;
 }
