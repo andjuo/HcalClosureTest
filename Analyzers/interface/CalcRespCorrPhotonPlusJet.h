@@ -169,6 +169,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   std::string hfRecHitName_;        // label for HFRecHit collection
   std::string hoRecHitName_;        // label for HORecHit collection
   std::string rootHistFilename_;    // name of the histogram file
+  std::string pvCollName_; // label for primary vertex collection
 
   bool allowNoPhoton_; // whether module is used for dijet analysis
   double photonPtMin_;   // lowest value of the leading photon pT
@@ -236,6 +237,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
   int nPhotons_, nGenJets_;
   int nCaloJets_, nPFJets_;
   ULong64_t nProcessed_;
+  int pf_NPV_;
 
   /// MET info 
   float met_value_, met_phi_, met_sumEt_ ;
@@ -279,7 +281,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
 
   // Particle-flow jets
   // leading Et jet info
-  float ppfjet_pt_, ppfjet_p_, ppfjet_E_, ppfjet_eta_, ppfjet_phi_, ppfjet_scale_;
+  float ppfjet_pt_, ppfjet_p_, ppfjet_E_, ppfjet_eta_, ppfjet_phi_, ppfjet_scale_, ppfjet_area_, ppfjet_E_NPUcorr_;
   float ppfjet_NeutralHadronFrac_, ppfjet_NeutralEMFrac_;
   int ppfjet_nConstituents_;
   float ppfjet_ChargedHadronFrac_, ppfjet_ChargedMultiplicity_, ppfjet_ChargedEMFrac_;
