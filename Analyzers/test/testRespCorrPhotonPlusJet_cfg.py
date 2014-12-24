@@ -16,7 +16,7 @@ process.GlobalTag.globaltag=autoCond['startup']
 process.load('HcalClosureTest.Analyzers.calcrespcorrphotonplusjet_cfi')
 
 # run over files
-process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('tree_QCD.root')
+process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('tree_PhoJet_relval_noCHS.root')
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
 process.calcrespcorrphotonplusjet.doGenJets = cms.bool(True)
@@ -32,7 +32,7 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
 import FWCore.Utilities.FileUtils as FileUtils
 #listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
 #listFileName='selection_tmp.txt'
-listFileName='fileInfo_RelVal_5_3_14_QCD_flat_v6.txt'
+listFileName='fileInfo_RelVal_5_3_14_PhotonJets.txt'
 mylist = FileUtils.loadListFromFile(listFileName)
 # to add additional files from another list, define that list and
 # uncomment the next line
