@@ -341,12 +341,28 @@ class GammaJetEvent_t : public TObject
 struct GammaJetCuts_t {
   protected:
   Double_t fEtDiffMin, fEtDiffMax;
-  public:
+  Int_t fRequirePhotonID, fRequireJetID;
+  Double_t fRequireDPhi;
+public:
   GammaJetCuts_t();
   GammaJetCuts_t(const GammaJetCuts_t &cuts);
 
   void SetEtDiff(double min, double max)
   { fEtDiffMin=min; fEtDiffMax=max; }
+
+  void RequirePhotonID(int setID) { fRequirePhotonID= setID; }
+  void RequireJetID(int setID) { fRequireJetID= setID; }
+  void RequireDPhi(Double_t dPhi) { fRequireDPhi= dPhi; }
+
+  Int_t RequirePhotonID() const { return fRequirePhotonID; }
+  Int_t RequireJetID() const { return fRequireJetID; }
+  Double_t RequireDPhi() const { return fRequireDPhi; }
+
+  void ActivateSelection1() {
+    fEtDiffMin=-1; fEtDiffMax=1e16;
+    fRequirePhotonID= 2;  fRequireJetID=0;
+    fRequireDPhi= 2.95;
+  }
 
   int passCuts(const GammaJetEvent_t &e) const;
 };

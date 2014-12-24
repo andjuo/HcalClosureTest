@@ -230,13 +230,17 @@ void GammaJetEvent_t::MyPrint(int detail, std::ostream& out) const {
 // ----------------------------------------------------------------
 
 GammaJetCuts_t::GammaJetCuts_t()
-  : fEtDiffMin(-1.), fEtDiffMax(1e16)
+  : fEtDiffMin(-1.), fEtDiffMax(1e16),
+    fRequirePhotonID(-1), fRequireJetID(-1),
+    fRequireDPhi(0.)
 {}
 
 // ----------------------------------------------------------------
 
 GammaJetCuts_t::GammaJetCuts_t(const GammaJetCuts_t &c)
-  : fEtDiffMin(c.fEtDiffMin), fEtDiffMax(c.fEtDiffMax)
+  : fEtDiffMin(c.fEtDiffMin), fEtDiffMax(c.fEtDiffMax),
+    fRequirePhotonID(c.fRequirePhotonID), fRequireJetID(c.fRequireJetID),
+    fRequireDPhi(c.fRequireDPhi)
 {}
 
 // ----------------------------------------------------------------
@@ -245,6 +249,12 @@ int GammaJetCuts_t::passCuts(const GammaJetEvent_t &e) const {
   int ok=1;
   double tagProbeEtDiff= fabs(e.CalcDiffEt());
   if ((tagProbeEtDiff<fEtDiffMin) || (tagProbeEtDiff>fEtDiffMax)) ok=0;
+  if (ok) {
+    const GammaJetEventAuxInfo_t *a= & e.GetAuxInfo();
+    if ( a->GetPhotonQuality() < fRequirePhotonID ) ok=0;
+    if ( a->GetJetQuality() <fRequireJetID ) ok=0;
+    if ( fabs(e.GetTagPhi()-e.GetProbePhi()) < fRequireDPhi ) ok=0;
+  }
   return ok;
 }
 
