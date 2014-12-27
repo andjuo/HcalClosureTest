@@ -34,8 +34,11 @@
 using namespace std;
 
 #include <boost/regex.hpp>
-bool isMC = 1;
-double getNeutralPUCorr(double eta, int intNPV, double area, bool isMC_)
+
+// Based on values and recommendations by Ia Iashvili
+// Returns correction to the jet total energy
+// The jet has to be after CHS
+double getNeutralPVCorr(double eta, int intNPV, double area, bool isMC_)
 {
   double NPV = static_cast<double>(intNPV);
   double etaArray[101] = {-5, -4.9, -4.8, -4.7, -4.6, -4.5, -4.4, -4.3, -4.2, -4.1, -4, -3.9, -3.8, -3.7, -3.6, -3.5, -3.4, -3.3, -3.2, -3.1, -3, -2.9, -2.8, -2.7, -2.6, -2.5, -2.4, -2.3, -2.2, -2.1, -2, -1.9, -1.8, -1.7, -1.6, -1.5, -1.4, -1.3, -1.2, -1.1, -1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5};
@@ -788,7 +791,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     pf_NPV_ = 0;
     for(std::vector<reco::Vertex>::const_iterator it=pv->begin(); it!=pv->end(); ++it){
       if(!it->isFake() && it->ndof() > 4) ++pf_NPV_;
-    }    
+    }
 
     // Get jet corrections
     const JetCorrector* correctorPF = JetCorrector::getJetCorrector(pfJetCorrName_,evSetup);
@@ -909,7 +912,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
       ppfjet_eta_   = pfjet_probe.jet()->eta();
       ppfjet_area_ = pfjet_probe.jet()->jetArea();
       ppfjet_E_     = pfjet_probe.jet()->energy();
-      ppfjet_E_NPUcorr_   = ((pfjet_probe.jet()->energy()) - getNeutralPUCorr(ppfjet_eta_,pf_NPV_,ppfjet_area_,isMC));
+      ppfjet_E_NPVcorr_   = pfjet_probe.jet()->energy() - getNeutralPVCorr(ppfjet_eta_,pf_NPV_,ppfjet_area_,doGenJets_);
       ppfjet_phi_   = pfjet_probe.jet()->phi();
       ppfjet_NeutralHadronFrac_  = pfjet_probe.jet()->neutralHadronEnergyFraction();
       ppfjet_NeutralEMFrac_      = pfjet_probe.jet()->neutralEmEnergyFraction();
@@ -1667,7 +1670,7 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     pf_tree_->Branch("ppfjet_pt",&ppfjet_pt_, "ppfjet_pt/F");
     pf_tree_->Branch("ppfjet_p",&ppfjet_p_, "ppfjet_p/F");
     pf_tree_->Branch("ppfjet_E",&ppfjet_E_, "ppfjet_E/F");
-    pf_tree_->Branch("ppfjet_E_NPUcorr",&ppfjet_E_NPUcorr_, "ppfjet_E_NPUcorr/F");
+    pf_tree_->Branch("ppfjet_E_NPVcorr",&ppfjet_E_NPVcorr_, "ppfjet_E_NPVcorr/F");
     pf_tree_->Branch("ppfjet_area",&ppfjet_area_, "ppfjet_area/F");
     pf_tree_->Branch("ppfjet_eta",&ppfjet_eta_, "ppfjet_eta/F");
     pf_tree_->Branch("ppfjet_phi",&ppfjet_phi_, "ppfjet_phi/F");
@@ -1678,7 +1681,6 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     pf_tree_->Branch("ppfjet_ChargedHadronFrac", &ppfjet_ChargedHadronFrac_, "ppfjet_ChargedHadronFrac/F");
     pf_tree_->Branch("ppfjet_ChargedMultiplicity", &ppfjet_ChargedMultiplicity_, "ppfjet_ChargedMultiplicity/F");
     pf_tree_->Branch("ppfjet_ChargedEMFrac", &ppfjet_ChargedEMFrac_, "ppfjet_ChargedEMFrac/F");
-    pf_tree_->Branch("pf_NPV",&pf_NPV_, "pf_NPV/I");
     if(doGenJets_){
       pf_tree_->Branch("ppfjet_genpt",&ppfjet_genpt_, "ppfjet_genpt/F");
       pf_tree_->Branch("ppfjet_genp",&ppfjet_genp_, "ppfjet_genp/F");
@@ -1750,6 +1752,8 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     pf_tree_->Branch("pfjet2_pt",&pfjet2_pt_, "pfjet2_pt/F");
     pf_tree_->Branch("pfjet2_p",&pfjet2_p_, "pfjet2_p/F");
     pf_tree_->Branch("pfjet2_E",&pfjet2_E_, "pfjet2_E/F");
+    pf_tree_->Branch("pfjet2_E_NPVcorr",&pfjet2_E_NPVcorr_, "pfjet2_E_NPVcorr/F");
+    pf_tree_->Branch("pfjet2_area",&pfjet2_area_, "pfjet2_area/F");
     pf_tree_->Branch("pfjet2_eta",&pfjet2_eta_, "pfjet2_eta/F");
     pf_tree_->Branch("pfjet2_phi",&pfjet2_phi_, "pfjet2_phi/F");
     pf_tree_->Branch("pfjet2_scale",&pfjet2_scale_, "pfjet2_scale/F");
@@ -1836,14 +1840,15 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     pf_tree_->Branch("pf_thirdjet_eta", &pf_thirdjet_eta_, "pf_thirdjet_eta/F");
     pf_tree_->Branch("pf_thirdjet_phi", &pf_thirdjet_phi_, "pf_thirdjet_phi/F");
     pf_tree_->Branch("pf_thirdjet_scale", &pf_thirdjet_scale_, "pf_thirdjet_scale/F");
-  }
 
-  pf_tree_->Branch("met_value", &met_value_, "met_value/F");
-  pf_tree_->Branch("met_phi", &met_phi_, "met_phi/F");
-  pf_tree_->Branch("met_sumEt", &met_sumEt_, "met_sumEt/F");
-  pf_tree_->Branch("metType1_value", &metType1_value_, "metType1_value/F");
-  pf_tree_->Branch("metType1_phi", &metType1_phi_, "metType1_phi/F");
-  pf_tree_->Branch("metType1_sumEt", &metType1_sumEt_, "metType1_sumEt/F");
+    pf_tree_->Branch("met_value", &met_value_, "met_value/F");
+    pf_tree_->Branch("met_phi", &met_phi_, "met_phi/F");
+    pf_tree_->Branch("met_sumEt", &met_sumEt_, "met_sumEt/F");
+    pf_tree_->Branch("metType1_value", &metType1_value_, "metType1_value/F");
+    pf_tree_->Branch("metType1_phi", &metType1_phi_, "metType1_phi/F");
+    pf_tree_->Branch("metType1_sumEt", &metType1_sumEt_, "metType1_sumEt/F");
+    pf_tree_->Branch("pf_NPV",&pf_NPV_, "pf_NPV/I");
+  }
 
   return;
   ////  std::cout << "End beginJob()" << std::endl;
@@ -2107,6 +2112,7 @@ std::vector<float> CalcRespCorrPhotonPlusJet::pfTkIsoWithVertex(const reco::Phot
 void CalcRespCorrPhotonPlusJet::clear_leadingPfJetVars() {
   ppfjet_pt_ = ppfjet_p_ = ppfjet_E_ = 0;
   ppfjet_eta_ = ppfjet_phi_ = ppfjet_scale_ = 0.;
+  ppfjet_area_ = ppfjet_E_NPVcorr_ = 0.;
   ppfjet_NeutralHadronFrac_ = ppfjet_NeutralEMFrac_ = 0.;
   ppfjet_nConstituents_ = 0;
   ppfjet_ChargedHadronFrac_ = ppfjet_ChargedMultiplicity_ = 0;
@@ -2165,6 +2171,8 @@ void CalcRespCorrPhotonPlusJet::copy_leadingPfJetVars_to_pfJet2() {
   pfjet2_eta_ = ppfjet_eta_;
   pfjet2_phi_ = ppfjet_phi_;
   pfjet2_scale_ = ppfjet_scale_;
+  pfjet2_area_ = ppfjet_area_;
+  pfjet2_E_NPVcorr_ = ppfjet_E_NPVcorr_;
   pfjet2_NeutralHadronFrac_ = ppfjet_NeutralHadronFrac_;
   pfjet2_NeutralEMFrac_ = ppfjet_NeutralEMFrac_;
   pfjet2_nConstituents_ = ppfjet_nConstituents_;

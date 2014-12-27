@@ -14,9 +14,12 @@ process.GlobalTag.globaltag=autoCond['startup']
 
 #load the response corrections calculator
 process.load('HcalClosureTest.Analyzers.calcrespcorrphotonplusjet_cfi')
+#  needed for nonCHS
+process.load('JetMETCorrections.Configuration.JetCorrectionProducers_cff')
+#process.load('JetMETCorrections.Configuration.JetCorrectionServices_cff')
 
 # run over files
-process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('tree_PhoJet_relval_noCHS.root')
+process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_CHS.root')
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
 process.calcrespcorrphotonplusjet.doGenJets = cms.bool(True)
@@ -26,6 +29,12 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring(
     'HLT_Photon90_CaloIdVL_IsoL','HLT_Photon135',
     'HLT_Photon150','HLT_Photon160')
 process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
+
+# a clone without CHS
+process.calcrespcorrphotonplusjet_noCHS= process.calcrespcorrphotonplusjet.clone()
+process.calcrespcorrphotonplusjet_noCHS.rootHistFilename = cms.string('PhoJet_tree_nonCHS.root')
+process.calcrespcorrphotonplusjet_noCHS.pfJetCollName = cms.string('ak5PFJets')
+process.calcrespcorrphotonplusjet_noCHS.pfJetCorrName = cms.string('ak5PFL2L3')
 
 # Load file list
 # Summer12_DR53X production G_Pt_XtoY
@@ -74,5 +83,7 @@ process.p = cms.Path(
 process.pfNoPileUpSequence
 +process.PF2PAT
 +process.ak5PFJetsCHS
-+process.calcrespcorrphotonplusjet)
++process.calcrespcorrphotonplusjet
+#+process.calcrespcorrphotonplusjet_noCHS
+)
 

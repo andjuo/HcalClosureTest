@@ -22,4 +22,8 @@ ak5PFJetschsL1FastL2L3 = cms.ESProducer(
     correctors = cms.vstring('ak5PFchsL1Fastjet','ak5PFchsL2Relative', 'ak5PFchsL3Absolute')
 )
 
+ak5PFchsL2L3 = cms.ESProducer(
+    'JetCorrectionESChain',
+    correctors = cms.vstring('ak5PFchsL2Relative', 'ak5PFchsL3Absolute')
+    )
 

@@ -281,7 +281,8 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
 
   // Particle-flow jets
   // leading Et jet info
-  float ppfjet_pt_, ppfjet_p_, ppfjet_E_, ppfjet_eta_, ppfjet_phi_, ppfjet_scale_, ppfjet_area_, ppfjet_E_NPUcorr_;
+  float ppfjet_pt_, ppfjet_p_, ppfjet_E_, ppfjet_eta_, ppfjet_phi_, ppfjet_scale_;
+  float ppfjet_area_, ppfjet_E_NPVcorr_;
   float ppfjet_NeutralHadronFrac_, ppfjet_NeutralEMFrac_;
   int ppfjet_nConstituents_;
   float ppfjet_ChargedHadronFrac_, ppfjet_ChargedMultiplicity_, ppfjet_ChargedEMFrac_;
@@ -305,6 +306,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
 
   // subleading Et jet info
   float pfjet2_pt_, pfjet2_p_, pfjet2_E_, pfjet2_eta_, pfjet2_phi_, pfjet2_scale_;
+  float pfjet2_area_, pfjet2_E_NPVcorr_;
   float pfjet2_NeutralHadronFrac_, pfjet2_NeutralEMFrac_;
   int pfjet2_nConstituents_;
   float pfjet2_ChargedHadronFrac_, pfjet2_ChargedMultiplicity_, pfjet2_ChargedEMFrac_;
