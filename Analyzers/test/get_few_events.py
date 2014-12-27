@@ -25,7 +25,7 @@ import FWCore.Utilities.FileUtils as FileUtils
 listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
 #listFileName='selection_tmp.txt'
 mylist = FileUtils.loadListFromFile(listFileName)
-mylist.extend( FileUtils.loadListFromFile(listFileName) )
+#mylist.extend( FileUtils.loadListFromFile(listFileName) )
 gjetsFiles = cms.untracked.vstring( *mylist )
 
 
