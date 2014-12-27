@@ -72,6 +72,8 @@ public :
    Float_t         ppfjet_pt;
    Float_t         ppfjet_p;
    Float_t         ppfjet_E;
+   Float_t         ppfjet_E_NPVcorr;
+   Float_t         ppfjet_area;
    Float_t         ppfjet_eta;
    Float_t         ppfjet_phi;
    Float_t         ppfjet_scale;
@@ -146,6 +148,8 @@ public :
    Float_t         pfjet2_pt;
    Float_t         pfjet2_p;
    Float_t         pfjet2_E;
+   Float_t         pfjet2_E_NPVcorr;
+   Float_t         pfjet2_area;
    Float_t         pfjet2_eta;
    Float_t         pfjet2_phi;
    Float_t         pfjet2_scale;
@@ -232,6 +236,7 @@ public :
    Float_t         metType1_value;
    Float_t         metType1_phi;
    Float_t         metType1_sumEt;
+   Int_t           pf_NPV;
 
    // List of branches
    TBranch        *b_photonTrig_fired;   //!
@@ -262,17 +267,19 @@ public :
    TBranch        *b_tagPho_ConvSafeEleVeto;   //!
    TBranch        *b_tagPho_idTight;   //!
    TBranch        *b_tagPho_idLoose;   //!
-   TBranch        *b_tagPho_genPt;
-   TBranch        *b_tagPho_genEnergy;
-   TBranch        *b_tagPho_genEta;
-   TBranch        *b_tagPho_genPhi;
-   TBranch        *b_tagPho_genDeltaR;
+   TBranch        *b_tagPho_genPt;   //!
+   TBranch        *b_tagPho_genEnergy;   //!
+   TBranch        *b_tagPho_genEta;   //!
+   TBranch        *b_tagPho_genPhi;   //!
+   TBranch        *b_tagPho_genDeltaR;   //!
    TBranch        *b_nPhotons;   //!
    TBranch        *b_nGenJets;   //!
    TBranch        *b_nPFJets;   //!
    TBranch        *b_ppfjet_pt;   //!
    TBranch        *b_ppfjet_p;   //!
    TBranch        *b_ppfjet_E;   //!
+   TBranch        *b_ppfjet_E_NPVcorr;   //!
+   TBranch        *b_ppfjet_area;   //!
    TBranch        *b_ppfjet_eta;   //!
    TBranch        *b_ppfjet_phi;   //!
    TBranch        *b_ppfjet_scale;   //!
@@ -347,6 +354,8 @@ public :
    TBranch        *b_pfjet2_pt;   //!
    TBranch        *b_pfjet2_p;   //!
    TBranch        *b_pfjet2_E;   //!
+   TBranch        *b_pfjet2_E_NPVcorr;   //!
+   TBranch        *b_pfjet2_area;   //!
    TBranch        *b_pfjet2_eta;   //!
    TBranch        *b_pfjet2_phi;   //!
    TBranch        *b_pfjet2_scale;   //!
@@ -433,6 +442,7 @@ public :
    TBranch        *b_metType1_value;   //!
    TBranch        *b_metType1_phi;   //!
    TBranch        *b_metType1_sumEt;   //!
+   TBranch        *b_pf_NPV;   //!
 
    pf_gammajettree(TString fname="");
    virtual ~pf_gammajettree();
@@ -656,6 +666,7 @@ int pf_gammajettree::Init(const TString &fname)
    tagPho_genEta=tagPho_genPhi=tagPho_genDeltaR=0;
    nPhotons=nGenJets=nPFJets=0;
    ppfjet_pt=ppfjet_p=ppfjet_E=ppfjet_eta=ppfjet_phi=ppfjet_scale=0;
+   ppfjet_E_NPVcorr=ppfjet_area=0;
    ppfjet_NeutralHadronFrac=ppfjet_NeutralEMFrac=0;
    ppfjet_nConstituents=0;
    ppfjet_ChargedHadronFrac=ppfjet_ChargedMultiplicity=ppfjet_ChargedEMFrac=0;
@@ -669,6 +680,7 @@ int pf_gammajettree::Init(const TString &fname)
    ppfjet_unkown_n=ppfjet_electron_n=ppfjet_muon_n=ppfjet_photon_n=0;
    ppfjet_had_n=ppfjet_ntwrs=ppfjet_cluster_n=ppfjet_ncandtracks=0;
    pfjet2_pt=pfjet2_p=pfjet2_E=pfjet2_eta=pfjet2_phi=pfjet2_scale=0;
+   pfjet2_E_NPVcorr=pfjet2_area=0;
    pfjet2_NeutralHadronFrac=pfjet2_NeutralEMFrac=0;
    pfjet2_nConstituents=0;
    pfjet2_ChargedHadronFrac=pfjet2_ChargedMultiplicity=pfjet2_ChargedEMFrac=0;
@@ -686,6 +698,7 @@ int pf_gammajettree::Init(const TString &fname)
    pf_thirdjet_eta=pf_thirdjet_phi=pf_thirdjet_scale=0;
    met_value=met_phi=met_sumEt=0;
    metType1_value=metType1_phi=metType1_sumEt=0;
+   pf_NPV=0;
 
    // Set branch addresses and branch pointers
    //if (!tree) return;
@@ -732,6 +745,8 @@ int pf_gammajettree::Init(const TString &fname)
    fChain->SetBranchAddress("ppfjet_pt", &ppfjet_pt, &b_ppfjet_pt);
    fChain->SetBranchAddress("ppfjet_p", &ppfjet_p, &b_ppfjet_p);
    fChain->SetBranchAddress("ppfjet_E", &ppfjet_E, &b_ppfjet_E);
+   fChain->SetBranchAddress("ppfjet_E_NPVcorr", &ppfjet_E_NPVcorr, &b_ppfjet_E_NPVcorr);
+   fChain->SetBranchAddress("ppfjet_area", &ppfjet_area, &b_ppfjet_area);
    fChain->SetBranchAddress("ppfjet_eta", &ppfjet_eta, &b_ppfjet_eta);
    fChain->SetBranchAddress("ppfjet_phi", &ppfjet_phi, &b_ppfjet_phi);
    fChain->SetBranchAddress("ppfjet_scale", &ppfjet_scale, &b_ppfjet_scale);
@@ -806,6 +821,8 @@ int pf_gammajettree::Init(const TString &fname)
    fChain->SetBranchAddress("pfjet2_pt", &pfjet2_pt, &b_pfjet2_pt);
    fChain->SetBranchAddress("pfjet2_p", &pfjet2_p, &b_pfjet2_p);
    fChain->SetBranchAddress("pfjet2_E", &pfjet2_E, &b_pfjet2_E);
+   fChain->SetBranchAddress("pfjet2_E_NPVcorr", &pfjet2_E_NPVcorr, &b_pfjet2_E_NPVcorr);
+   fChain->SetBranchAddress("pfjet2_area", &pfjet2_area, &b_pfjet2_area);
    fChain->SetBranchAddress("pfjet2_eta", &pfjet2_eta, &b_pfjet2_eta);
    fChain->SetBranchAddress("pfjet2_phi", &pfjet2_phi, &b_pfjet2_phi);
    fChain->SetBranchAddress("pfjet2_scale", &pfjet2_scale, &b_pfjet2_scale);
@@ -892,6 +909,7 @@ int pf_gammajettree::Init(const TString &fname)
    fChain->SetBranchAddress("metType1_value", &metType1_value, &b_metType1_value);
    fChain->SetBranchAddress("metType1_phi", &metType1_phi, &b_metType1_phi);
    fChain->SetBranchAddress("metType1_sumEt", &metType1_sumEt, &b_metType1_sumEt);
+   fChain->SetBranchAddress("pf_NPV", &pf_NPV, &b_pf_NPV);
    Notify();
    return 1;
 }
