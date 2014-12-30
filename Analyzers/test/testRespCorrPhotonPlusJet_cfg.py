@@ -9,8 +9,8 @@ from Configuration.AlCa.autoCond import autoCond
 process.load("Configuration.Geometry.GeometryIdeal_cff")
 process.GlobalTag.globaltag=autoCond['startup']
 
-#process.load('RecoJets.Configuration.RecoPFJets_cff')
-#process.kt6PFJets = process.kt6PFJets.clone(rParam = 0.6, doRhoFastjet = True)          
+# Specify IdealMagneticField ESSource (needed for CMSSW 730)
+process.load("MagneticField.Engine.autoMagneticFieldProducer_cfi")
 
 #load the response corrections calculator
 process.load('HcalClosureTest.Analyzers.calcrespcorrphotonplusjet_cfi')
@@ -23,18 +23,29 @@ process.calcrespcorrphotonplusjet.rootHistFilename = cms.string('PhoJet_tree_CHS
 process.calcrespcorrphotonplusjet.doCaloJets = cms.bool(False)
 process.calcrespcorrphotonplusjet.doPFJets = cms.bool(True)
 process.calcrespcorrphotonplusjet.doGenJets = cms.bool(True)
+# trigger names should not end with '_'
 process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring(
     'HLT_Photon20_CaloIdVL_IsoL','HLT_Photon30_CaloIdVL_IsoL',
     'HLT_Photon50_CaloIdVL_IsoL','HLT_Photon75_CaloIdVL_IsoL',
     'HLT_Photon90_CaloIdVL_IsoL','HLT_Photon135',
     'HLT_Photon150','HLT_Photon160')
+# triggers for CMSSW 730
+process.calcrespcorrphotonplusjet.photonTriggers += cms.vstring(
+    'HLT_Photon22', 'HLT_Photon30', 'HLT_Photon36',
+    'HLT_Photon50', 'HLT_Photon75',
+    'HLT_Photon90', 'HLT_Photon120', 'HLT_Photon175',
+    'HLT_Photon250_NoHE', 'HLT_Photon300_NoHE'
+)
+# to disable photonTriggers assign an empty vstring
 process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
 
 # a clone without CHS
 process.calcrespcorrphotonplusjet_noCHS= process.calcrespcorrphotonplusjet.clone()
 process.calcrespcorrphotonplusjet_noCHS.rootHistFilename = cms.string('PhoJet_tree_nonCHS.root')
+# for 7XY use ak4* instead of ak5
 process.calcrespcorrphotonplusjet_noCHS.pfJetCollName = cms.string('ak5PFJets')
 process.calcrespcorrphotonplusjet_noCHS.pfJetCorrName = cms.string('ak5PFL2L3')
+#process.calcrespcorrphotonplusjet_noCHS.pfJetCorrName = cms.string('ak4PFL2L3')
 
 # Load file list
 # Summer12_DR53X production G_Pt_XtoY
@@ -42,6 +53,7 @@ import FWCore.Utilities.FileUtils as FileUtils
 #listFileName='fileinfo_GJet/makepy_Summer12_DR53X_G_Pt_170to300.txt'
 #listFileName='selection_tmp.txt'
 listFileName='fileInfo_RelVal_5_3_14_PhotonJets.txt'
+#listFileName='fileInfo_RelVal_7_3_0_PhotonJets.txt'
 mylist = FileUtils.loadListFromFile(listFileName)
 # to add additional files from another list, define that list and
 # uncomment the next line
@@ -80,10 +92,9 @@ process.ak5PFJetsCHS = ak5PFJets.clone(
 process.load('HcalClosureTest.Analyzers.calcrespcorr_CHSJECs_cff')
 
 process.p = cms.Path(
-process.pfNoPileUpSequence
-+process.PF2PAT
-+process.ak5PFJetsCHS
-+process.calcrespcorrphotonplusjet
+#process.pfNoPileUpSequence*  # already included in PF2PAT
+process.PF2PAT
++(process.ak5PFJetsCHS
++process.calcrespcorrphotonplusjet)
 #+process.calcrespcorrphotonplusjet_noCHS
 )
-
