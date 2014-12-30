@@ -35,6 +35,9 @@ using namespace std;
 
 #include <boost/regex.hpp>
 
+
+int debugHLTTrigNames=1;
+
 // Based on values and recommendations by Ia Iashvili
 // Returns correction to the jet total energy
 // The jet has to be after CHS
@@ -330,6 +333,19 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
       return;
     }
     const edm::TriggerNames &evTrigNames =iEvent.triggerNames(*triggerResults);
+
+    if (debugHLTTrigNames>0) {
+      std::cout << "\ndebugHLTTrigNames is on\n";
+      const std::vector<std::string> *trNames= & evTrigNames.triggerNames();
+      for (size_t i=0; i<trNames->size(); ++i) {
+	if (trNames->at(i).find("_Photon")!=std::string::npos) {
+	  std::cout << " - " << trNames->at(i) << "\n";
+	}
+      }
+      std::cout << std::endl;
+      debugHLTTrigNames--;
+    }
+
     size_t id = 0;
     for (size_t i=0; i<photonTrigNamesV_.size(); ++i) {
       const std::string trigName=photonTrigNamesV_.at(i);
