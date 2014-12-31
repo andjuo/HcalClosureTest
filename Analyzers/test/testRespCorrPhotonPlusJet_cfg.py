@@ -30,12 +30,12 @@ process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring(
     'HLT_Photon90_CaloIdVL_IsoL','HLT_Photon135',
     'HLT_Photon150','HLT_Photon160')
 # triggers for CMSSW 730
-process.calcrespcorrphotonplusjet.photonTriggers += cms.vstring(
-    'HLT_Photon22', 'HLT_Photon30', 'HLT_Photon36',
-    'HLT_Photon50', 'HLT_Photon75',
-    'HLT_Photon90', 'HLT_Photon120', 'HLT_Photon175',
-    'HLT_Photon250_NoHE', 'HLT_Photon300_NoHE'
-)
+#process.calcrespcorrphotonplusjet.photonTriggers += cms.vstring(
+#    'HLT_Photon22', 'HLT_Photon30', 'HLT_Photon36',
+#    'HLT_Photon50', 'HLT_Photon75',
+#    'HLT_Photon90', 'HLT_Photon120', 'HLT_Photon175',
+#    'HLT_Photon250_NoHE', 'HLT_Photon300_NoHE'
+#)
 # to disable photonTriggers assign an empty vstring
 process.calcrespcorrphotonplusjet.photonTriggers = cms.vstring()
 
