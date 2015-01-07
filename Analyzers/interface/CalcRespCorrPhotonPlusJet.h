@@ -233,7 +233,7 @@ class CalcRespCorrPhotonPlusJet : public edm::EDAnalyzer {
 
   // Event info
   int runNumber_, lumiBlock_, eventNumber_;
-  float eventWeight_;
+  float eventWeight_, eventPtHat_;
   int nPhotons_, nGenJets_;
   int nCaloJets_, nPFJets_;
   ULong64_t nProcessed_;

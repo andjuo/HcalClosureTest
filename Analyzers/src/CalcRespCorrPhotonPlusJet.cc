@@ -174,6 +174,7 @@ CalcRespCorrPhotonPlusJet::CalcRespCorrPhotonPlusJet(const edm::ParameterSet& iC
 
   // set it here to ensure the value is defined
   eventWeight_ = 1.0;
+  eventPtHat_ = 0.;
   nProcessed_ = 0;
 }
 
@@ -457,6 +458,10 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
       return;
     }
     eventWeight_ = genEventInfoProduct->weight();
+    eventPtHat_ = 0.;
+    if (genEventInfoProduct->hasBinningValues()) {
+      eventPtHat_ = genEventInfoProduct->binningValues()[0];
+    }
   }
 
   runNumber_ = iEvent.id().run();
@@ -1573,6 +1578,7 @@ void CalcRespCorrPhotonPlusJet::beginJob()
     tree->Branch("LumiBlock",&lumiBlock_, "LumiBlock/I");
     tree->Branch("EventNumber",&eventNumber_, "EventNumber/I");
     tree->Branch("EventWeight",&eventWeight_, "EventWeight/F");
+    tree->Branch("EventPtHat",&eventPtHat_, "EventPtHat/F");
 
     // Photon info
     tree->Branch("rho2012", &rho2012_, "rho2012/F");

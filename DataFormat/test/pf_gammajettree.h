@@ -41,6 +41,7 @@ public :
    Int_t           LumiBlock;
    Int_t           EventNumber;
    Float_t         EventWeight;
+   Float_t         EventPtHat;
    Float_t         rho2012;
    Float_t         tagPho_pt;
    Float_t         pho_2nd_pt;
@@ -247,6 +248,7 @@ public :
    TBranch        *b_LumiBlock;   //!
    TBranch        *b_EventNumber;   //!
    TBranch        *b_EventWeight;   //!
+   TBranch        *b_EventPtHat;   //!
    TBranch        *b_rho2012;   //!
    TBranch        *b_tagPho_pt;   //!
    TBranch        *b_pho_2nd_pt;   //!
@@ -655,7 +657,7 @@ int pf_gammajettree::Init(const TString &fname)
 
    // clear variables
    RunNumber=LumiBlock=EventNumber=0;
-   EventWeight=rho2012=tagPho_pt=pho_2nd_pt=0;
+   EventWeight=EventPtHat=rho2012=tagPho_pt=pho_2nd_pt=0;
    tagPho_energy=tagPho_eta=tagPho_phi=tagPho_sieie=0;
    tagPho_HoE=tagPho_r9=0;
    tagPho_EcalIsoDR04=tagPho_HcalIsoDR04=tagPho_HcalIsoDR0412=0;
@@ -714,6 +716,7 @@ int pf_gammajettree::Init(const TString &fname)
    fChain->SetBranchAddress("LumiBlock", &LumiBlock, &b_LumiBlock);
    fChain->SetBranchAddress("EventNumber", &EventNumber, &b_EventNumber);
    fChain->SetBranchAddress("EventWeight", &EventWeight, &b_EventWeight);
+   fChain->SetBranchAddress("EventPtHat", &EventPtHat, &b_EventPtHat);
    fChain->SetBranchAddress("rho2012", &rho2012, &b_rho2012);
    fChain->SetBranchAddress("tagPho_pt", &tagPho_pt, &b_tagPho_pt);
    fChain->SetBranchAddress("pho_2nd_pt", &pho_2nd_pt, &b_pho_2nd_pt);

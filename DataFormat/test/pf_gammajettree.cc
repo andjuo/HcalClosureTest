@@ -72,6 +72,7 @@ void pf_gammajettree::ActivateBranches_forRecHitsEnergyCalc() {
 
 void pf_gammajettree::ActivateBranches_forFitSkim() {
   ActivateBranches(3, "EventNumber","RunNumber","EventWeight");
+  ActivateBranches(1, "EventPtHat");
   ActivateBranches(1, "tagPho_pt");
   ActivateBranches(3, "tagPho_idTight","tagPho_idLoose","tagPho_pixelSeed");
   ActivateBranches(2, "nPhotons","nPFJets");
