@@ -24,8 +24,8 @@ calcrespcorrphotonplusjet = cms.EDAnalyzer(
     pvCollName = cms.string('offlinePrimaryVertices'),
     allowNoPhoton       = cms.bool(False),
     photonJetDPhiMin    = cms.double(2.0),  # 0.75 pi= 2.356, 0.7 pi=2.2
-    photonPtMin         = cms.double(20.),
-    jetEtMin            = cms.double(20.),
+    photonPtMin         = cms.double(15.),
+    jetEtMin            = cms.double(15.),
     jet2EtMax            = cms.double(100.),
     jet3EtMax            = cms.double(50.),
     photonTriggers      = cms.vstring(''), #HLT_Photon20_*, HLT_Photon135*'),
