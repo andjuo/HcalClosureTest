@@ -16,14 +16,14 @@
 
 // ------------------------------------------------------
 
-inline void prepareHisto(TH1D *h) {
+inline void prepareHisto(TH1D *h, int showStats=0) {
   h->SetDirectory(0);
-  h->SetStats(0);
+  h->SetStats(showStats);
 }
 
-inline void prepareHisto(TH2D *h) {
+inline void prepareHisto(TH2D *h, int showStats=0) {
   h->SetDirectory(0);
-  h->SetStats(0);
+  h->SetStats(showStats);
 }
 
 // ------------------------------------------------------
@@ -110,10 +110,8 @@ void analyzePFGammaJetTree(TString inpFileName,
   TH1D *h1_jet_energy_RHoverGen= new TH1D("h1_jet_energy_RHoverGen",
 		       "Jet energy ratio (RH div gen);E_{RH}/E_{gen};count",
 					  100,0.,2.5);
-  prepareHisto(h1_jet_energy_PFoverGen);
-  prepareHisto(h1_jet_energy_RHoverGen);
-  h1_jet_energy_PFoverGen->SetStats(1);
-  h1_jet_energy_RHoverGen->SetStats(1);
+  prepareHisto(h1_jet_energy_PFoverGen,1);
+  prepareHisto(h1_jet_energy_RHoverGen,1);
 
   int show_jet_pT_PF_over_Gen=1;
   TH1D *h1_jet_pT_PFoverGen= new TH1D("h1_jet_pT_PFoverGen",
@@ -122,10 +120,8 @@ void analyzePFGammaJetTree(TString inpFileName,
   TH1D *h1_jet_pT_RHoverGen= new TH1D("h1_jet_pT_RHoverGen",
 	       "Jet E_{T} ratio (RH div gen);p_{T}^{RH}/p_{T}^{gen};count",
 					  100,0.,2.5);
-  prepareHisto(h1_jet_pT_PFoverGen);
-  prepareHisto(h1_jet_pT_RHoverGen);
-  h1_jet_pT_PFoverGen->SetStats(1);
-  h1_jet_pT_RHoverGen->SetStats(1);
+  prepareHisto(h1_jet_pT_PFoverGen,1);
+  prepareHisto(h1_jet_pT_RHoverGen,1);
 
   int show_jet_energy_PF_over_Gen_divScale=0; // this is not correct plot
   TH1D *h1_jet_energy_PFoverGen_divScale=
@@ -136,11 +132,8 @@ void analyzePFGammaJetTree(TString inpFileName,
     new TH1D("h1_jet_energy_RHoverGen_divScale",
       "Jet energy ratio (RH/scale div gen);E_{RH}/E_{gen}/JEC_{scale};count",
 					  100,0.,2.5);
-  prepareHisto(h1_jet_energy_PFoverGen_divScale);
-  prepareHisto(h1_jet_energy_RHoverGen_divScale);
-  h1_jet_energy_PFoverGen_divScale->SetStats(1);
-  h1_jet_energy_RHoverGen_divScale->SetStats(1);
-
+  prepareHisto(h1_jet_energy_PFoverGen_divScale,1);
+  prepareHisto(h1_jet_energy_RHoverGen_divScale,1);
 
   int show_pho2D_pt=1;
   TH2D *h2_pho_pt= new TH2D("h2_pho_pt","Photon p_{T};gen p_{T};reco p_{T}",
@@ -168,6 +161,16 @@ void analyzePFGammaJetTree(TString inpFileName,
 			      100,0.,c_pt_max,
 			      100,0.,c_pt_max);
   prepareHisto(h2_jet_ptRH);
+
+  int show_pho_pt=1;
+  TH1D *h1_pho_genPt= new TH1D("h1_pho_genPt",
+			       "Photon gen p_{T};gen p_{#gamma,T};count",
+			       100,0.,c_pt_max);
+  TH1D *h1_pho_recoPt= new TH1D("h1_pho_recoPt",
+			       "Photon reco p_{T};reco p_{#gamma,T};count",
+			       100,0.,c_pt_max);
+  prepareHisto(h1_pho_genPt,1);
+  prepareHisto(h1_pho_recoPt,1);
 
   int show_pho_vs_jet_genPt=1;
   TH2D *h2_pho_vs_jet_genPt= new TH2D("h2_pho_vs_jet_genPt",
@@ -262,6 +265,8 @@ void analyzePFGammaJetTree(TString inpFileName,
     h2_jet_ptPF->Fill( inpData.ppfjet_genpt, inpData.ppfjet_pt, w);
     //h2_jet_ptPF->Fill( inpData.pfjet2_genpt, inpData.pfjet2_pt, w);
     h2_jet_ptRH->Fill( inpData.ppfjet_genpt, dt->GetProbeETtot(), w );
+    h1_pho_genPt->Fill (inpData.tagPho_genPt, w );
+    h1_pho_recoPt->Fill(inpData.tagPho_pt, w );
     h2_pho_vs_jet_genPt->Fill( inpData.tagPho_genPt, inpData.ppfjet_genpt, w);
     h2_pho_vs_jet_recoPtPF->Fill( inpData.tagPho_pt, inpData.ppfjet_pt, w);
     h2_pho_vs_jet_recoPtRH->Fill( inpData.tagPho_pt, dt->GetProbeETtot(), w);
@@ -331,6 +336,8 @@ void analyzePFGammaJetTree(TString inpFileName,
   displayHisto(show_pho2D_pt, h2_pho_pt,"pho2D_pt","COLZ");
   displayHisto(show_jet2D_ptPF, h2_jet_ptPF,"jet2D_ptPF","COLZ");
   displayHisto(show_jet2D_ptRH, h2_jet_ptRH,"jet2D_ptRH","COLZ");
+  displayHisto(show_pho_pt, h1_pho_genPt, "pho_genPt","LPE");
+  displayHisto(show_pho_pt, h1_pho_recoPt, "pho_recoPt","LPE");
   displayHisto(show_pho_vs_jet_genPt, h2_pho_vs_jet_genPt,"pho_vs_jet_genPt","COLZ");
   displayHisto(show_pho_vs_jet_recoPtPF, h2_pho_vs_jet_recoPtPF,"pho_vs_jet_recoPtPF","COLZ");
   displayHisto(show_pho_vs_jet_recoPtRH, h2_pho_vs_jet_recoPtRH,"pho_vs_jet_recoPtRH","COLZ");
