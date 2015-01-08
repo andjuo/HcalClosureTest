@@ -169,6 +169,7 @@ CalcRespCorrPhotonPlusJet::CalcRespCorrPhotonPlusJet(const edm::ParameterSet& iC
   doCaloJets_          = iConfig.getParameter<bool>("doCaloJets");
   doPFJets_            = iConfig.getParameter<bool>("doPFJets");
   doGenJets_           = iConfig.getParameter<bool>("doGenJets");
+  workOnAOD_           = iConfig.getParameter<bool>("workOnAOD");
   ignoreHLT_           = false;
   if (iConfig.exists("ignoreHLT")) ignoreHLT_ = iConfig.getUntrackedParameter<bool>("ignoreHLT");
 
@@ -742,7 +743,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     // Get RecHits in HB and HE
     edm::Handle<edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit>>> hbhereco;
     iEvent.getByLabel(hbheRecHitName_,hbhereco);
-    if(!hbhereco.isValid()) {
+    if(!hbhereco.isValid() && !workOnAOD_) {
       throw edm::Exception(edm::errors::ProductNotFound)
 	<< " could not find HBHERecHit named " << hbheRecHitName_ << ".\n";
       return;
@@ -751,7 +752,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     // Get RecHits in HF
     edm::Handle<edm::SortedCollection<HFRecHit,edm::StrictWeakOrdering<HFRecHit>>> hfreco;
     iEvent.getByLabel(hfRecHitName_,hfreco);
-    if(!hfreco.isValid()) {
+    if(!hfreco.isValid() && !workOnAOD_) {
       throw edm::Exception(edm::errors::ProductNotFound)
 	<< " could not find HFRecHit named " << hfRecHitName_ << ".\n";
       return;
@@ -760,7 +761,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     // Get RecHits in HO
     edm::Handle<edm::SortedCollection<HORecHit,edm::StrictWeakOrdering<HORecHit>>> horeco;
     iEvent.getByLabel(hoRecHitName_,horeco);
-    if(!horeco.isValid()) {
+    if(!horeco.isValid() && !workOnAOD_) {
       throw edm::Exception(edm::errors::ProductNotFound)
 	<< " could not find HORecHit named " << hoRecHitName_ << ".\n";
       return;
@@ -775,26 +776,32 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     const CaloSubdetectorGeometry *HFGeom = geoHandle->getSubdetectorGeometry(DetId::Hcal, 4);
     
     int HBHE_n = 0;
-    for(edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit>>::const_iterator ith=hbhereco->begin(); ith!=hbhereco->end(); ++ith){
-      HBHE_n++;
-      h_hbherecoieta_->Fill((*ith).id().ieta());
-      if(iEvent.id().event() == debugEvent){
-	std::cout << (*ith).id().ieta() << " " << (*ith).id().iphi() << std::endl;
-	h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
+    if (hbhereco.isValid()) {
+      for(edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit>>::const_iterator ith=hbhereco->begin(); ith!=hbhereco->end(); ++ith){
+	HBHE_n++;
+	h_hbherecoieta_->Fill((*ith).id().ieta());
+	if(iEvent.id().event() == debugEvent){
+	  std::cout << (*ith).id().ieta() << " " << (*ith).id().iphi() << std::endl;
+	  h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
+	}
       }
     }
     int HF_n = 0;
-    for(edm::SortedCollection<HFRecHit,edm::StrictWeakOrdering<HFRecHit>>::const_iterator ith=hfreco->begin(); ith!=hfreco->end(); ++ith){
-      HF_n++;
-      if(iEvent.id().event() == debugEvent){
-	h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
+    if (hfreco.isValid()) {
+      for(edm::SortedCollection<HFRecHit,edm::StrictWeakOrdering<HFRecHit>>::const_iterator ith=hfreco->begin(); ith!=hfreco->end(); ++ith){
+	HF_n++;
+	if(iEvent.id().event() == debugEvent){
+	  h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
+	}
       }
     }
     int HO_n = 0;
-    for(edm::SortedCollection<HORecHit,edm::StrictWeakOrdering<HORecHit>>::const_iterator ith=horeco->begin(); ith!=horeco->end(); ++ith){
-      HO_n++;
-      if(iEvent.id().event() == debugEvent){
-	h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
+    if (horeco.isValid()) {
+      for(edm::SortedCollection<HORecHit,edm::StrictWeakOrdering<HORecHit>>::const_iterator ith=horeco->begin(); ith!=horeco->end(); ++ith){
+	HO_n++;
+	if(iEvent.id().event() == debugEvent){
+	  h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
+	}
       }
     }
     h_HBHE_n_->Fill(HBHE_n);
@@ -1162,6 +1169,11 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 	int HFEM_n_ = 0;
 	int HF_type_ = 0;
 	int maxElement=(*it)->elementsInBlocks().size();
+	//std::cout << "maxElement=" << maxElement << std::endl;
+	if (workOnAOD_) {
+	  maxElement=0;
+	  //std::cout << "forced 0" << std::endl;
+	}
 	for(int e=0; e<maxElement; ++e){
 	  // Get elements from block
 	  reco::PFBlockRef blockRef = (*it)->elementsInBlocks()[e].first;
@@ -1933,6 +1945,7 @@ CalcRespCorrPhotonPlusJet::endJob() {
     misc_tree_->Branch("doCaloJets",&doCaloJets_,"doCaloJets/O");
     misc_tree_->Branch("doPFJets",&doPFJets_,"doPFJets/O");
     misc_tree_->Branch("doGenJets",&doGenJets_,"doGenJets/O");
+    misc_tree_->Branch("workOnAOD",&workOnAOD_,"workOnAOD/O");
     misc_tree_->Branch("photonTriggerNames",&photonTrigNamesV_);
     misc_tree_->Branch("jetTriggerNames",&jetTrigNamesV_);
     misc_tree_->Branch("nProcessed",&nProcessed_,"nProcessed/l");

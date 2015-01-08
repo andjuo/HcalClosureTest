@@ -41,6 +41,7 @@ calcrespcorrphotonplusjet = cms.EDAnalyzer(
     doCaloJets          = cms.bool(True),
     doPFJets            = cms.bool(True),
     doGenJets           = cms.bool(True),
+    workOnAOD           = cms.bool(False),
     debug               = cms.untracked.int32(0)
     )
 
