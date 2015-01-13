@@ -19,4 +19,7 @@
     gROOT->ProcessLine(".x link_GammaJetFitAnalyzer.cc+");
   }
 
+  if (1) { // access misc gamma+jet info
+    gROOT->ProcessLine(".x misc_gammajettree.cc+");
+  }
 }
