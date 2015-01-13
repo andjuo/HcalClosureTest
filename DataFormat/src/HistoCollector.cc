@@ -171,12 +171,16 @@ void HistoCollector_t::Clear()
 
 // ----------------------------------------------------------------
 
-TH1D* HistoCollector_t::GetH1D(TString name) {
+TH1D* HistoCollector_t::GetH1D(TString name, int verbose) {
   TH1D *h= NULL;
+  if (verbose) std::cout << "GetH1D(" << name << ")\n";
   for (unsigned int i=0; !h && (i<fHistos1Dv.size()); i++) {
+    if (verbose) {
+      std::cout << "chk i=" << i << ", " << fHistos1Dv[i]->GetName() << "\n";
+    }
     if (TString(fHistos1Dv[i]->GetName()) == name) {
       h=fHistos1Dv[i];
-      //std::cout << "located at i=" << i << "\n";
+      if (verbose) std::cout << "located at i=" << i << "\n";
     }
   }
   return h;

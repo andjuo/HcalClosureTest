@@ -45,7 +45,7 @@ class HistoCollector_t {
   unsigned int CountTH2D() const { return fHistos2Dv.size(); }
   unsigned int CountCanvas() const { return fCanvasV.size(); }
   TH1D* GetH1D(int idx) { return fHistos1Dv[idx]; }
-  TH1D* GetH1D(TString name);
+  TH1D* GetH1D(TString name, int verbose=0);
   TH2D* GetH2D(int idx) { return fHistos2Dv[idx]; }
   TH2D* GetH2D(TString name);
   TCanvas* GetCanvas(int idx) const { return fCanvasV[idx]; }
