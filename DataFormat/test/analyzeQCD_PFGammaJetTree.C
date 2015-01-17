@@ -54,6 +54,8 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
 			       TString plotOutDir_user="",
 			       int saveCollection_user=-1) {
 
+  std::cout << "inpFileName=<" << inpFileName << ">\n";
+
 #ifdef helper_HH
   if (plotOutDir_user.Length()>0) plotOutDir= plotOutDir_user;
 #endif
@@ -75,8 +77,12 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
   int show_evweight=1;
   TH1D *h1_evWeight= new TH1D("h1_evWeight","Event weight;w;count",1000,0,10);
   TH1D *h1_evPtHat= new TH1D("h1_evPtHat","Event #hat p_{T};#hat p_{T};count",100,0,500);
+  TH1D *h1_evPtHatEvWeighted= new TH1D("h1_evPtHatEvWeighted","Event #hat p_{T};#hat p_{T};gen-weighted count",100,0,500);
+  TH1D *h1_evPtHatWeighted= new TH1D("h1_evPtHatWeighted","Event #hat p_{T};#hat p_{T};weighted count",100,0,500);
   prepareHisto(h1_evWeight);
   prepareHisto(h1_evPtHat);
+  prepareHisto(h1_evPtHatEvWeighted);
+  prepareHisto(h1_evPtHatWeighted);
 
   double c_pt_max=500;
   double c_energy_max=1500;
@@ -133,6 +139,14 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
 			      100,0.,c_pt_max);
   prepareHisto(h2_jet_ptPF);
 
+  int show_photon_pt=1;
+  TH1D* h1_photon_pTreco = new TH1D("h1_photon_pTreco",
+				    "photon pT;p_{T}^{#gamma};count",
+				   100,0.,c_pt_max);
+  prepareHisto(h1_photon_pTreco,1);
+
+
+
   // process the data
   pf_gammajettree inpData(inpFileName);
 
@@ -141,10 +155,13 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
   inpData.ActivateBranches(2,"EventWeight","EventPtHat");
   inpData.ActivateBranches(2,"ppfjet_pt","ppfjet_E");
   inpData.ActivateBranches(2,"ppfjet_genpt","ppfjet_genE");
+  inpData.ActivateBranches(1,"tagPho_pt");
   //inpData.ActivateBranches_genBasicSet();
 
   // read in the file
   Long64_t nEntries= inpData.fChain->GetEntries();
+  std::cout << "nEntries=" << nEntries << "\n";
+  if (nEntries==0) return;
   if (maxEntries<0) maxEntries=nEntries;
   Long64_t nBytes=0, passedCount=0;
   Double_t sum_evWeight_window=0;
@@ -163,11 +180,16 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
     passedCount++;
 
     double w=inpData.EventWeight;
-    if (flatQCD) w /= pow(inpData.EventPtHat/double(15.), double(4.5));
+    if (0 && flatQCD) {
+      // It seems this factor is already included in the gen.event weight
+      //w /= pow(inpData.EventPtHat/double(15.), double(4.5));
+    }
     if (extraWeightFactor>0) w*= extraWeightFactor;
 
     h1_evWeight->Fill( w, 1. );
     h1_evPtHat->Fill( inpData.EventPtHat, 1. );
+    h1_evPtHatEvWeighted->Fill( inpData.EventPtHat, inpData.EventWeight );
+    h1_evPtHatWeighted->Fill( inpData.EventPtHat, w );
     h1_jet_energyGen->Fill( inpData.ppfjet_genE, w);
     h1_jet_energyPF->Fill( inpData.ppfjet_E, w);
     h1_jet_energy_PFoverGen->Fill( inpData.ppfjet_E/inpData.ppfjet_genE, w);
@@ -182,6 +204,8 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
     }
     h1_jet_pT_PFoverGen->Fill( inpData.ppfjet_pt/inpData.ppfjet_genpt, w);
     h2_jet_ptPF->Fill( inpData.ppfjet_genpt, inpData.ppfjet_pt, w);
+
+    h1_photon_pTreco->Fill( inpData.tagPho_pt, w );
 
     int gen_debug=0;
     if (gen_debug==1) {
@@ -205,6 +229,8 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
 
   displayHisto(show_evweight, h1_evWeight,"evWeight","LPE");
   displayHisto(show_evweight, h1_evPtHat, "evPtHat", "LPE");
+  displayHisto(show_evweight, h1_evPtHatEvWeighted,"evPtHatEvWeighted", "LPE");
+  displayHisto(show_evweight, h1_evPtHatWeighted, "evPtHatWeighted", "LPE");
 
   displayHisto(show_jet_energy, h1_jet_energyGen, "jet_E_gen","LPE");
   displayHisto(show_jet_energy, h1_jet_energyPF, "jet_E_recoPF","LPE");
@@ -218,6 +244,8 @@ void analyzeQCD_PFGammaJetTree(TString inpFileName,
   displayHisto(show_jet_pT_window, h1_jet_pTPF_window, "jet_pT_reco_window","LPE");
 
   displayHisto(show_jet2D_ptPF, h2_jet_ptPF, "jet2D_ptPF","COLZ");
+
+  displayHisto(show_photon_pt, h1_photon_pTreco, "photon_pTreco","LPE");
 
   if (saveCollection) {
     TString outFName=TString("saved_") + plotOutDir + TString(".root");
