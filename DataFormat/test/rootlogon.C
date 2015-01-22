@@ -22,4 +22,5 @@
   if (1) { // access misc gamma+jet info
     gROOT->ProcessLine(".x misc_gammajettree.cc+");
   }
+  gROOT->ProcessLine(".L helper.h+");
 }
