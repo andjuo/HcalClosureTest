@@ -7,7 +7,7 @@ from CommonTools.ParticleFlow.pfNoPileUp_cff import *
 calcrespcorrphotonplusjet = cms.EDAnalyzer(
     'CalcRespCorrPhotonPlusJet',
     caloJetCollName     = cms.string('ak5CaloJets'),
-    rhoColl             = cms.InputTag("kt6PFJets","rho"),
+    rhoColl             = cms.InputTag("fixedGridRhoFastjetAll"),
     PFMETColl           = cms.InputTag("pfMet"),
     PFMETTYPE1Coll      = cms.InputTag("pfType1CorrectedMet"),
     photonCollName      = cms.string('photons'),
