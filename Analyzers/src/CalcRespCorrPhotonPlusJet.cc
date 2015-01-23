@@ -31,12 +31,11 @@
 #include <vector>
 #include <set>
 #include <map>
-using namespace std;
 
 #include <boost/regex.hpp>
 
 
-int debugHLTTrigNames=1;
+int debugHLTTrigNames=2;
 
 // Based on values and recommendations by Ia Iashvili
 // Returns correction to the jet total energy
@@ -105,7 +104,7 @@ void printElementsInBlocks(const reco::PFCandidate& cand,
     HERE("iBlock=",i);
     reco::PFBlockRef blockRef = cand.elementsInBlocks()[i].first;
     if(blockRef.isNull()) {
-      cerr<<"ERROR! no block ref!";
+      std::cerr<<"ERROR! no block ref!"<<std::endl;
       continue;
     }
     if (0) {
@@ -115,9 +114,9 @@ void printElementsInBlocks(const reco::PFCandidate& cand,
 	firstRef = blockRef;
       }
       else if( blockRef!=firstRef) {
-	cerr<<"WARNING! This PFCandidate is not made from a single block"<<endl;
+	std::cerr<<"WARNING! This PFCandidate is not made from a single block"<<std::endl;
       }
-      out<<"\t"<<cand.elementsInBlocks()[i].second<<endl;
+      out<<"\t"<<cand.elementsInBlocks()[i].second<<std::endl;
     }
     else {
       const edm::OwnVector<reco::PFBlockElement>& elements = blockRef->elements();
@@ -340,12 +339,15 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
       std::cout << "\ndebugHLTTrigNames is on\n";
       const std::vector<std::string> *trNames= & evTrigNames.triggerNames();
       for (size_t i=0; i<trNames->size(); ++i) {
+	int show=(debugHLTTrigNames>1) ? 1:0;
 	if (trNames->at(i).find("_Photon")!=std::string::npos) {
-	  std::cout << " - " << trNames->at(i) << "\n";
+	  show=1;
+	  std::cout << " ! ";
 	}
+	if (show) std::cout << " - " << trNames->at(i) << "\n";
       }
       std::cout << std::endl;
-      debugHLTTrigNames--;
+      debugHLTTrigNames=0;
     }
 
     size_t id = 0;
@@ -415,13 +417,13 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   edm::Handle<reco::VertexCollection> vtxHandle;
   iEvent.getByLabel("offlinePrimaryVertices", vtxHandle);
 
-  //edm::Handle<reco::GsfElectronCollection> gsfElectronHandle;
-  //iEvent.getByLabel("gsfElectrons", gsfElectronHandle);
+  edm::Handle<reco::GsfElectronCollection> gsfElectronHandle;
+  iEvent.getByLabel("gsfElectrons", gsfElectronHandle);
 
-  //edm::Handle<double> rhoHandle_2012;
-  //iEvent.getByLabel(rhoCollection_, rhoHandle_2012);
-  //rho2012_ = *(rhoHandle_2012.product());
-  rho2012_ = -1e6;
+  edm::Handle<double> rhoHandle;
+  iEvent.getByLabel(rhoCollection_, rhoHandle);
+  rho2012_ = *(rhoHandle.product());
+  //rho2012_ = -1e6;
 
   ///  std::cout << "getting convH" << std::endl;
   edm::Handle<reco::ConversionCollection> convH;
@@ -491,7 +493,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
     tagPho_pfiso_myneutral03_=0;
     tagPho_pfiso_mycharged03.clear();
     tagPho_pixelSeed_=0;
-    tagPho_ConvSafeEleVeto_=0;
+    tagPho_ConvSafeEleVeto_=-99;
     tagPho_idTight_=0;
     tagPho_idLoose_=0;
     tagPho_genPt_=0;
@@ -520,8 +522,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
   tagPho_pfiso_myneutral03_ = pfHcalIso(photon_tag.photon(), pfHandle, 0.3, 0.0, reco::PFCandidate::h0);
   tagPho_pfiso_mycharged03.push_back(pfTkIsoWithVertex(photon_tag.photon(), pfHandle, vtxHandle, 0.3, 0.02, 0.02, 0.0, 0.2, 0.1, reco::PFCandidate::h));
 
-  //tagPho_ConvSafeEleVeto_ = ((int)ConversionTools::hasMatchedPromptElectron(photon_tag.photon()->superCluster(), gsfElectronHandle, convH, beamSpotHandle->position()));
-  tagPho_ConvSafeEleVeto_ = -999;
+  tagPho_ConvSafeEleVeto_ = ((int)ConversionTools::hasMatchedPromptElectron(photon_tag.photon()->superCluster(), gsfElectronHandle, convH, beamSpotHandle->position()));
 
   edm::Ref<reco::PhotonCollection> photonRef(photons, photon_tag.idx());
   tagPho_idLoose_ = (loosePhotonQual.isValid()) ? (*loosePhotonQual)[photonRef] : -1;
@@ -781,7 +782,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 	HBHE_n++;
 	h_hbherecoieta_->Fill((*ith).id().ieta());
 	if(iEvent.id().event() == debugEvent){
-	  std::cout << (*ith).id().ieta() << " " << (*ith).id().iphi() << std::endl;
+	  //std::cout << (*ith).id().ieta() << " " << (*ith).id().iphi() << std::endl;
 	  h_rechitspos_->Fill((*ith).id().ieta(), (*ith).id().iphi());
 	}
       }
@@ -1229,7 +1230,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 			    const CaloCellGeometry::CornersVec& cv = thisCell->getCorners();
 			    float avgeta = (cv[0].eta() + cv[2].eta())/2.0;
 			    float avgphi = (static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
-			    if(cv[0].phi() < cv[2].phi()) std::cout << "pHB" << cv[0].phi() << " " << cv[2].phi() << std::endl;
+			    //if(cv[0].phi() < cv[2].phi()) std::cout << "pHB" << cv[0].phi() << " " << cv[2].phi() << std::endl;
 			    if(cv[0].phi() < cv[2].phi()) avgphi = (2.0*3.141592653 + static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
 
 			    //if(pf_Event_ == 9413996) //debug
@@ -1243,7 +1244,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 			    const CaloCellGeometry::CornersVec& cv = thisCell->getCorners();
 			    float avgeta = (cv[0].eta() + cv[2].eta())/2.0;
 			    float avgphi = (static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
-			    if(cv[0].phi() < cv[2].phi()) std::cout << "pHE" << cv[0].phi() << " " << cv[2].phi() << std::endl;
+			    //if(cv[0].phi() < cv[2].phi()) std::cout << "pHE" << cv[0].phi() << " " << cv[2].phi() << std::endl;
 			    if(cv[0].phi() < cv[2].phi()) avgphi = (2.0*3.141592653 + static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
 
 			    //printf("pHE ieta: %3d iphi: %2d eta0: %6f phi0: %6f eta2: %6f phi2: %6f dR: %f\n",(*ith).id().ieta(),(*ith).id().iphi(),static_cast<double>cv[0].eta(),static_cast<double>cv[0].phi(),static_cast<double>cv[2].eta(),static_cast<double>cv[2].phi(),static_cast<double>deltaR(ppfjet_eta_,ppfjet_phi_,avgeta,avgphi)); //debug
@@ -1290,7 +1291,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 		  if((*it)->eta() < cv[0].eta() && (*it)->eta() > cv[2].eta()){
 		    if((*it)->phi() < cv[0].phi() && (*it)->phi() > cv[2].phi()) passMatch = true;
 		    else if(cv[0].phi() < cv[2].phi()){
-		      std::cout << "HFHAD probe" << std::endl;
+		      //std::cout << "HFHAD probe" << std::endl;
 		      if((*it)->phi() < cv[0].phi()) passMatch = true;
 		      else if((*it)->phi() > cv[2].phi()) passMatch = true;
 		    }
@@ -1310,7 +1311,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 		    ppfjet_twr_candtrackind_.push_back(-1);
 		    float avgeta = (cv[0].eta() + cv[2].eta())/2.0;
 		    float avgphi = (static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
-		    if(cv[0].phi() < cv[2].phi()) std::cout << "pHFhad" << cv[0].phi() << " " << cv[2].phi() << std::endl;
+		    //if(cv[0].phi() < cv[2].phi()) std::cout << "pHFhad" << cv[0].phi() << " " << cv[2].phi() << std::endl;
 		    if(cv[0].phi() < cv[2].phi()) avgphi = (2.0*3.141592653 + static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
 		    ppfjet_twr_dR_.push_back(deltaR(ppfjet_eta_,ppfjet_phi_,avgeta,avgphi));
 		    ++ppfjet_ntwrs_;
@@ -1335,7 +1336,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 		  if((*it)->eta() < cv[0].eta() && (*it)->eta() > cv[2].eta()){
 		    if((*it)->phi() < cv[0].phi() && (*it)->phi() > cv[2].phi()) passMatch = true;
 		    else if(cv[0].phi() < cv[2].phi()){
-		      std::cout << "HFEM probe" << std::endl;
+		      //std::cout << "HFEM probe" << std::endl;
 		      if((*it)->phi() < cv[0].phi()) passMatch = true;
 		      else if((*it)->phi() > cv[2].phi()) passMatch = true;
 		    }
@@ -1355,7 +1356,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 		    ppfjet_twr_candtrackind_.push_back(-1);
 		    float avgeta = (cv[0].eta() + cv[2].eta())/2.0;
 		    float avgphi = (static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
-		    if(cv[0].phi() < cv[2].phi()) std::cout << "pHFem" << cv[0].phi() << " " << cv[2].phi() << std::endl;
+		    //if(cv[0].phi() < cv[2].phi()) std::cout << "pHFem" << cv[0].phi() << " " << cv[2].phi() << std::endl;
 		    if(cv[0].phi() < cv[2].phi()) avgphi = (2.0*3.141592653 + static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
 		    ppfjet_twr_dR_.push_back(deltaR(ppfjet_eta_,ppfjet_phi_,avgeta,avgphi));
 		    ++ppfjet_ntwrs_;
@@ -1413,7 +1414,7 @@ void CalcRespCorrPhotonPlusJet::analyze(const edm::Event& iEvent, const edm::Eve
 			const CaloCellGeometry::CornersVec& cv = thisCell->getCorners();
 			float avgeta = (cv[0].eta() + cv[2].eta())/2.0;
 			float avgphi = (static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
-			if(cv[0].phi() < cv[2].phi()) std::cout << "pHO" << cv[0].phi() << " " << cv[2].phi() << std::endl;
+			//if(cv[0].phi() < cv[2].phi()) std::cout << "pHO" << cv[0].phi() << " " << cv[2].phi() << std::endl;
 			if(cv[0].phi() < cv[2].phi()) avgphi = (2.0*3.141592653 + static_cast<double>(cv[0].phi()) + static_cast<double>(cv[2].phi()))/2.0;
 
 			ppfjet_twr_dR_.push_back(deltaR(ppfjet_eta_,ppfjet_phi_,avgeta,avgphi));
