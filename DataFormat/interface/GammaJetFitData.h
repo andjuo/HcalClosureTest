@@ -244,6 +244,9 @@ class GammaJetEvent_t : public TObject
   void SetTagEtaPhiEn(double valEta, double valPhi, double valEcalE,
 		      const std::map<Int_t,Double_t> &valHcalE);
 
+  // method meant to correct for the 2nd jet. Add 2nd jet energy to the tag
+  void AddTagEEtaPhi(double valE2, double valEta2, double valPhi2);
+
   Double_t GetTagETtot() const { return fTagEt; }
   Double_t GetTagEtot() const { return fTagE; }
 

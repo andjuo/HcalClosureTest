@@ -3,6 +3,7 @@
 #else
 #  include "HcalClosureTest/DataFormat/interface/GammaJetFitData.h"
 #endif
+#include <TLorentzVector.h>
 
 #ifdef __localRun
 #ifdef __CINT__
@@ -170,6 +171,61 @@ void GammaJetEvent_t::SetTagEtaPhiEn(double valEta, double valPhi,
   fTagE= calc_HcalE(valHcalE);
   fTagE += valEcalE;
   fTagEt= fTagE/cosh(valEta);
+}
+
+// ----------------------------------------------------------------
+
+void GammaJetEvent_t::AddTagEEtaPhi(double valE2, double valEta2,
+				    double valPhi2)
+{
+  if (fTagHcalE.size()>0) {
+    std::cout << "\nGammaJetEvent_t::AddTagEEtaPhi should not be used for\n"
+	      << "an object with non-empty fTagHcalE.\n"
+	      << "The result is incorrect\n";
+  }
+  const int code_check=0;
+  if (code_check) {
+    // for some reason, sum_phi is sometimes different from what
+    // TLorentzVector gives
+    double jet2Et= valE2/cosh(valEta2);
+    double sum_px= fTagEt * cos(fTagPhi) + jet2Et * cos(valPhi2);
+    double sum_py= fTagEt * sin(fTagPhi) + jet2Et * sin(valPhi2);
+    double sum_pz= fTagEt * sinh(fTagEta) + jet2Et * sinh(valEta2);
+    double sum_p = sqrt(pow(sum_px,2)+pow(sum_py,2)+pow(sum_pz,2));
+    double sum_eta= 0.5 * log( (sum_p+sum_pz)/(sum_p-sum_pz) );
+    double sum_pt = sqrt(pow(sum_px,2) + pow(sum_py,2));
+    double sum_phi= acos( sum_px / sum_pt );
+    double sum_phi_v2= asin( sum_py / sum_pt );
+    double sum_E= fTagE + valE2;
+    std::cout << "sum_p=" << sum_p << ", sum_pt=" << sum_pt
+	      << ", sum_eta=" << sum_eta << ", sum_phi=" << sum_phi
+	      << ", sum_phi(from py)=" << sum_phi_v2 << "\n";
+    std::cout << " (sumPx,sumPy,sumPz)=" << sum_px << ", " << sum_py
+	      << ", " << sum_pz << "\n";
+    std::cout << "      "; // align
+    std::cout << "totalE=" << sum_E << ", totalEt=" << sum_E/cosh(sum_eta) << "\n";
+  }
+
+  TLorentzVector tag,jet2;
+  tag .SetPtEtaPhiE(fTagEt,fTagEta,fTagPhi,fTagE);
+  jet2.SetPtEtaPhiE(valE2/cosh(valEta2),valEta2,valPhi2,valE2);
+  TLorentzVector sum= tag+jet2;
+  fTagEta= sum.Eta();
+  fTagPhi= sum.Phi();
+  fTagEcalE= sum.Energy();
+  fTagE= fTagEcalE;
+  fTagEt= sum.Et(); //fTagE/cosh(fTagEta);
+
+  if (code_check) {
+    std::cout << "final: fTagE=" << fTagE << ", fTagEt=" << fTagEt
+	      << ", fTagEta=" << fTagEta
+	      << ", fTagPhi=" << fTagPhi << "\n";
+    std::cout << " (px,py,pz)=" << sum.Px() << ", " << sum.Py()
+	      << ", " << sum.Pz() << "\n";
+    std::cout << " tag.E=" << tag.Energy()<<", jet2.E=" << jet2.Energy()<<"\n";
+    //std::cout << " tag.P=" << tag.P() << ", jet2.P=" << jet2.P() << "\n";
+    //std::cout << " tag.M=" << tag.M() << ", jet2.M=" << jet2.M() << "\n";
+  }
 }
 
 // ----------------------------------------------------------------
