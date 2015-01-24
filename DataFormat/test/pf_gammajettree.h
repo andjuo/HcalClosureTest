@@ -23,6 +23,7 @@
 //extern const int MAXIETA = 41;
 
 typedef enum { _notJet=0, _leadJet=1, _subleadJet=2 } TJetId_t;
+typedef enum { _phoLooseID=1, _phoTightID=2 } TPhotonId_t;
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
@@ -466,12 +467,69 @@ public :
    void ActivateBranches_jetID(int leadingJet=1);
 
    // Added tests
-   int passTightJetID(int leadingJet=1) const;
-   int passPhotonJetRequirements(int theSet=2) const;
+   TString explain_failingTightJetIDFlag(int flag, int leadingJet) const;
+   TString explain_failingPhotonJetFlag(int flag, double minPt) const;
 
-   int passCuts(int leadingJet=1, int theSet=2) const {
+
+   int passTightJetID(int leadingJet=1) const
+   {
+     int flag=0;
+     if (leadingJet) {
+       if (ppfjet_NeutralHadronFrac >= 0.90) flag|=1;
+       if (ppfjet_NeutralEMFrac >= 0.90) flag|=2;
+       if (ppfjet_nConstituents <= 1) flag|=4;
+       if (fabs(ppfjet_eta) < 2.4) {
+	 // additional requirements for the barrel jets
+	 if (ppfjet_ChargedHadronFrac == Float_t(0)) flag|=8;
+	 if (ppfjet_ChargedMultiplicity == Float_t(0)) flag|=16;
+	 if (ppfjet_ChargedEMFrac >= 0.99) flag|=32;
+       }
+     }
+     else {
+       if (pfjet2_NeutralHadronFrac >= 0.90) flag|=1;
+       if (pfjet2_NeutralEMFrac >= 0.90) flag|=2;
+       if (pfjet2_nConstituents <= 1) flag|=4;
+       if (fabs(pfjet2_eta) < 2.4) {
+	 // additional requirements for the barrel jets
+	 if (pfjet2_ChargedHadronFrac == Float_t(0)) flag|=8;
+	 if (pfjet2_ChargedMultiplicity == Float_t(0)) flag|=16;
+	 if (pfjet2_ChargedEMFrac >= 0.99) flag|=32;
+       }
+     }
+     if (0 && (flag!=0)) std::cout << "passTightJetID failed: "
+	     << explain_failingTightJetIDFlag(flag,leadingJet) << "\n";
+     return (flag==0) ? 1:0;
+   }
+
+   // photonIDReq: 1 - loose, 2 - tight. See TPhotonId_t
+   int passPhotonJetRequirements(int photonIDReq, double minPt) const
+   {
+     int flag=0;
+     if (tagPho_pt < minPt) flag|=1;
+     if (ppfjet_pt < minPt) flag|=2;
+     if ((tagPho_pt>0.) && (pfjet2_pt/tagPho_pt>=0.2)) flag|=4;
+     if (fabs(tagPho_phi - ppfjet_phi) <= 2.95) flag|=8;
+     if ((photonIDReq==int(_phoLooseID)) && (tagPho_idLoose==0)) flag|=16;
+     if ((photonIDReq==int(_phoTightID)) && (tagPho_idTight==0)) flag|=32;
+     //if (tagPho_pixelSeed != 0) flag|=64;
+
+     if (0 && (flag!=0)) {
+       std::cout << "passPhotonJetRequirements failed: "
+		 << explain_failingPhotonJetFlag(flag,minPt) << "\n";
+     }
+     return (flag==0) ? 1:0;
+   }
+
+   int passCuts(double minPt, int photonIDReq, int leadingJet=1) const
+   {
      return (passTightJetID(leadingJet) &&
-	     passPhotonJetRequirements(theSet)) ? 1:0;
+	     passPhotonJetRequirements(photonIDReq,minPt)) ? 1:0;
+   }
+
+   double alpha(int npvCorrectedJetE) const {
+     if (pfjet2_E==0) return 0.;
+     const double factor=(npvCorrectedJetE) ? 1 : pfjet2_E_NPVcorr/pfjet2_E;
+     return pfjet2_pt * factor / tagPho_pt;
    }
 
    friend

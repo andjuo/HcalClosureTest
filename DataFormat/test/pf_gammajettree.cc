@@ -108,8 +108,9 @@ void pf_gammajettree::ActivateBranches_jetID(int leadingJet) {
 
 // --------------------------------------------------------------
 
-TString explain_failingTightJetIDFlag(int flag, int leadingJet,
-				      const pf_gammajettree &e) {
+TString pf_gammajettree::explain_failingTightJetIDFlag
+                (int flag, int leadingJet) const
+{
   TString ans=Form("flag=%d,leadingJet=%d ",flag,leadingJet);
   if ((flag&1)!=0) ans.Append(" NeutralHadronFrac>=0.90 ");
   if ((flag&2)!=0) ans.Append(" NeutralEMFrac>=0.90 ");
@@ -117,11 +118,12 @@ TString explain_failingTightJetIDFlag(int flag, int leadingJet,
   if ((flag&8)!=0) ans.Append(" (Barrel)ChargedHadronFrac=0" );
   if ((flag&16)!=0) ans.Append(" (Barrel)ChargedMultiplicity=0 ");
   if ((flag&32)!=0) ans.Append(" (Barrel)ChargedEMFrac>=0.99 ");
-  if (0 && leadingJet) std::cout << e.ppfjet_nConstituents << "\n";
+  if (0 && leadingJet) std::cout << ppfjet_nConstituents << "\n";
   return ans;
 }
 
 // --------------------------------------------------------------
+/* Moved to the header
 
 int pf_gammajettree::passTightJetID(int leadingJet) const {
   int flag=0;
@@ -151,22 +153,21 @@ int pf_gammajettree::passTightJetID(int leadingJet) const {
 	     << explain_failingTightJetIDFlag(flag,leadingJet,*this) << "\n";
   return (flag==0) ? 1:0;
 }
+*/
 
 // --------------------------------------------------------------
 
-TString explain_failingPhotonJetFlag(int flag, const pf_gammajettree &e) {
+TString pf_gammajettree::explain_failingPhotonJetFlag
+        (int flag, double minPt) const
+{
   TString ans = Form("flag=%d: ",flag);
-  if ((flag&1)!=0) ans.Append(" tagPho_pt<=10 ");
-  if ((flag&2)!=0) ans.Append(" ppfjet_pt<=10 ");
+  if ((flag&1)!=0) ans.Append(Form(" tagPho_pt<=minPt(%4.1lf)",minPt));
+  if ((flag&2)!=0) ans.Append(Form(" ppfjet_pt<=minPt(%4.1lf)",minPt));
   if ((flag&4)!=0) {
-    double pfjet2_pt= e.pfjet2_pt;
-    double tagPho_pt= e.tagPho_pt;
     ans.Append(Form(" pfjet2_pt/tagPho_pt=%6.4lf/%6.4lf=%6.4lf ",
 		    pfjet2_pt,tagPho_pt,pfjet2_pt/tagPho_pt));
   }
   if ((flag&8)!=0) {
-    double tagPho_phi= e.tagPho_phi;
-    double ppfjet_phi= e.ppfjet_phi;
     ans.Append(Form("|dPhi|=|%4.2lf-%4.2lf|=%4.2lf<=2.95",
 		    tagPho_phi,ppfjet_phi, fabs(tagPho_phi-ppfjet_phi)));
   }
@@ -178,11 +179,13 @@ TString explain_failingPhotonJetFlag(int flag, const pf_gammajettree &e) {
 
 // --------------------------------------------------------------
 
-int pf_gammajettree::passPhotonJetRequirements(int theSet) const {
+/* Moved to the header
+int pf_gammajettree::passPhotonJetRequirements(double minPt) const {
+
   if (theSet==0) return 1;
   int flag=0;
-  if (tagPho_pt <= 10.) flag|=1;
-  if (ppfjet_pt <= 10.) flag|=2;
+  if (tagPho_pt < minPt) flag|=1;
+  if (ppfjet_pt < minPt) flag|=2;
   if ((tagPho_pt>0.) && (pfjet2_pt/tagPho_pt>=0.2)) flag|=4;
   if (fabs(tagPho_phi - ppfjet_phi) <= 2.95) flag|=8;
   if (theSet==1) {
@@ -192,10 +195,41 @@ int pf_gammajettree::passPhotonJetRequirements(int theSet) const {
     if (tagPho_idTight==0) flag|=32;
   }
   //if (tagPho_pixelSeed != 0) flag|=64;
-  if (0 && (flag!=0)) std::cout << "passPhotonJetRequirements failed: "
-			<< explain_failingPhotonJetFlag(flag,*this) << "\n";
+  if (0 && (flag!=0)) {
+    std::cout << "passPhotonJetRequirements failed: "
+	      << explain_failingPhotonJetFlag(flag,*this,minPt) << "\n";
+  }
   return (flag==0) ? 1:0;
 }
+*/
+
+// --------------------------------------------------------------
+
+/*
+void pf_gammajettree::updatePhotonIDflags() {
+  int ecalB= (fabs(tagPho_eta)<1.4442) ? 1:0;
+
+  // Based on https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedPhotonID2012
+  // Single tower H/E
+  int allFail=0;
+  if (tagPho_HoE >= 0.05) allFail=1;
+  if (ecalB) {
+    if ((tagPho_sieie >= 0.012) ||
+  if (allFail) {
+    tagPho_idTight=0;
+    tagPho_idLoose=0;
+    return;
+  }
+
+  tagPho_idTight=1;
+  tagPho_idLoose=1;
+  int idMedium=1;
+  if (ecalB) {
+    if (tagPho_sieie >= 0.012) {
+      tagPho_idTight
+  }
+}
+*/
 
 // --------------------------------------------------------------
 
