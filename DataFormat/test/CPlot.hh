@@ -47,10 +47,6 @@
 using namespace RooFit;
 #endif
 
-using std::vector;
-using std::string;
-
-
 class CPlotItem {
 public:
   CPlotItem():hist1D(0),hist2D(0),graph(0),prof(0),drawopt(""){}
@@ -190,11 +186,11 @@ public:
   int getItemCount() const { return fItems.size(); }
   
 protected:
-  vector<CPlotItem> fItems;             // list of items to be plotted
-  vector<TPaveText*> fTextBoxes;        // list of text boxes
-  vector<TLine*> fLines;                // list of lines
-  vector<TBox*> fBoxes;                 // list of boxes
-  vector<TF1*> fFcns;                   // list of 1D functions
+  std::vector<CPlotItem> fItems;             // list of items to be plotted
+  std::vector<TPaveText*> fTextBoxes;        // list of text boxes
+  std::vector<TLine*> fLines;                // list of lines
+  std::vector<TBox*> fBoxes;                 // list of boxes
+  std::vector<TF1*> fFcns;                   // list of 1D functions
   THStack *fStack;                      // histogram stack
   TString fName;                        // plot name
   TString fTitle;                       // plot title
@@ -210,7 +206,7 @@ protected:
   int fShowStats;                       // whether to display statistics
   double fStatsX, fStatsY;              // x,y coordinates of top left corner of stats box
   
-  vector<TLegendEntry*> fStackEntries;  // pointer to legend entry objects for histograms in a stack
+  std::vector<TLegendEntry*> fStackEntries;  // pointer to legend entry objects for histograms in a stack
   
 #ifndef __noRooFit
   RooPlot *fRooPlot;
