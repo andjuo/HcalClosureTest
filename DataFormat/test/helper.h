@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm> // for std::find
 #include <TCanvas.h>
 #include <TString.h>
 #include <TSystem.h>
@@ -64,8 +65,11 @@ int identifyTriggerIndices(const TString str,
 			   int debug=0) {
   arr1.clear(); arr2.clear();
   if (str.Length()<=1) {
-    std::cout << "incorrect string <" << str << ">\n";
-    return 0;
+    if ((str.Length()==1) && (str[0]!='|')) {
+      std::cout << "incorrect string <" << str << ">\n";
+      return 0;
+    }
+    else return 1;
   }
 
   int divPos= str.Index('|');
