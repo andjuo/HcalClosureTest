@@ -56,4 +56,48 @@ void SaveCanvas(TCanvas* canv, const TString &canvName, TString destDir="plots")
 
 // -----------------------------------------------
 
+// Assuming "x,y|z,t,w" format put x,y and z,t,w into two arrays
+//
+inline
+int identifyTriggerIndices(const TString str,
+			   std::vector<int> &arr1, std::vector<int> &arr2,
+			   int debug=0) {
+  arr1.clear(); arr2.clear();
+  if (str.Length()<=1) {
+    std::cout << "incorrect string <" << str << ">\n";
+    return 0;
+  }
+
+  int divPos= str.Index('|');
+  if (divPos==-1) {
+    std::cout << "divPos could not be located\n";
+    return 0;
+  }
+
+  const char *s= str.Data();
+  if (s[0]!='|') arr1.push_back(atoi(s));
+  for (int i=0; i<str.Length(); ++i) {
+    if ((s[i]==',') || (s[i]=='|')) {
+      if (i<divPos) arr1.push_back(atoi(s+i+1));
+      else {
+	if (i+1 < str.Length())
+	  arr2.push_back(atoi(s+i+1));
+      }
+    }
+  }
+
+  if (debug) {
+    std::cout << "identified " << arr1.size() << " indices I: ";
+    for (unsigned int i=0; i<arr1.size(); ++i) std::cout << " " << arr1[i];
+    std::cout << "\n";
+    std::cout << "identified " << arr2.size() << " indices II: ";
+    for (unsigned int i=0; i<arr2.size(); ++i) std::cout << " " << arr2[i];
+    std::cout << "\n";
+  }
+
+  return 1;
+}
+
+// -----------------------------------------------
+
 #endif

@@ -1,13 +1,21 @@
 #include "pf_gammajettree.h"
 #include "misc_gammajettree.h"
+#include "helper.h"
 
 void countProcessedEvents(TString fname, Long64_t maxEntries=-1,
-			  int countSelectedEvents=0)
+			  int countSelectedEvents=0, int listTriggers=1,
+			  TString restrictTriggers="|")
 {
   ULong64_t nProcessed=0;
   ULong64_t nChecked=0, nSelected=0;
 
   std::cout << "\tNote dual use due to countSelectedEvents=0 or 1\n";
+
+  std::vector<int> chkPhoTriggers,chkJetTriggers;
+  if (!identifyTriggerIndices(restrictTriggers,
+			      chkPhoTriggers,chkJetTriggers,0)) return;
+
+
 
   if (!countSelectedEvents) {
     // count processed events
@@ -21,6 +29,7 @@ void countProcessedEvents(TString fname, Long64_t maxEntries=-1,
       std::cout << "nEntries=0. Stop counting processed events\n";
       return;
     }
+
     Long64_t nBytes=0; //, passedCount=0;
 
     for (Long64_t iEntry=0; (iEntry<nEntries) && (iEntry<maxEntries);
@@ -33,20 +42,56 @@ void countProcessedEvents(TString fname, Long64_t maxEntries=-1,
       nProcessed+= inpMiscTree.nProcessed;
       std::cout << "... nProcessed=" << inpMiscTree.nProcessed
 		<< ", total=" << nProcessed << "\n";
+      if (listTriggers) {
+	std::cout << " ignoreHLT=" << inpMiscTree.ignoreHLT << "\n";
+	std::cout << " doPFJets=" << inpMiscTree.doPFJets << "\n";
+	std::cout << " doGenJets=" << inpMiscTree.doGenJets << "\n";
+	std::cout << " workOnAOD=" << inpMiscTree.workOnAOD << "\n";
+	if (inpMiscTree.photonTriggerNames) {
+	  std::cout << " " << inpMiscTree.photonTriggerNames->size()
+		    << " photon triggers:\n";
+	  for (unsigned int i=0; i<inpMiscTree.photonTriggerNames->size();i++){
+	    std::cout << " " << i << " "
+		      << inpMiscTree.photonTriggerNames->at(i);
+	    if (std::find(chkPhoTriggers.begin(),chkPhoTriggers.end(), int(i))
+		!= chkPhoTriggers.end()) std::cout << " -- marked";
+	    std::cout << "\n";
+	  }
+	}
+	else {
+	  std::cout << " photonTriggerNames is null\n";
+	}
+	if (inpMiscTree.jetTriggerNames) {
+	  std::cout << " " << inpMiscTree.jetTriggerNames->size()
+		    << " jet triggers :\n";
+	  for (unsigned int i=0; i<inpMiscTree.jetTriggerNames->size();i++){
+	    std::cout << " " << i << " "
+		      << inpMiscTree.jetTriggerNames->at(i);
+	    if (std::find(chkJetTriggers.begin(),chkJetTriggers.end(), int(i))
+		!= chkJetTriggers.end()) std::cout << " -- marked";
+	    std::cout << "\n";
+	  }
+	}
+	else {
+	  std::cout << " jetTriggerNames is null\n";
+	}
+      }
     }
 
   }
 
   // Count selected events
-  if (countSelectedEvents==1) {
+  if (countSelectedEvents>=1) {
     pf_gammajettree inpData(fname);
 
     inpData.DeactivateBranches();
 
+    // trigger
+    inpData.ActivateBranches (2, "photonTrig_fired","jetTrig_fired");
     // photon
     inpData.ActivateBranches
-      (4,
-       "tagPho_pt","tagPho_phi",
+      (5,
+       "tagPho_pt","tagPho_phi","tagPho_eta",
        "tagPho_idLoose","tagPho_idTight");
     // jet id
     inpData.ActivateBranches
@@ -59,6 +104,7 @@ void countProcessedEvents(TString fname, Long64_t maxEntries=-1,
     // alpha
     inpData.ActivateBranches
       (1, "pfjet2_pt");
+
 
     // read in the file
     Long64_t nEntries= inpData.fChain->GetEntries();
@@ -81,7 +127,15 @@ void countProcessedEvents(TString fname, Long64_t maxEntries=-1,
       }
       //std::cout << "ientry=" << iEntry << "\n";
 
-      if (!inpData.passCuts(20.,int(_phoLooseID),1)) continue; // recommended use
+      if (!inpData.passCuts(20.,int(_phoTightID),1)) continue; // recommended use
+      if ((countSelectedEvents>1) &&
+	  ((fabs(inpData.tagPho_eta)>2.4) || (fabs(inpData.ppfjet_eta)>2.4))) {
+	continue;
+      }
+
+      if ((restrictTriggers.Length()>1) &&
+	  !inpData.hltTriggerFired(chkPhoTriggers,chkJetTriggers)) continue;
+
       //if ( inpData.pfjet2_pt/inpData.tagPho_pt > 0.05) continue; // stricter alpha cut
 
       nSelected++;

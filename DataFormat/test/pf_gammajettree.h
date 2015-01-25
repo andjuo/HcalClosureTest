@@ -526,6 +526,32 @@ public :
 	     passPhotonJetRequirements(photonIDReq,minPt)) ? 1:0;
    }
 
+
+   int hltTriggerFired(const std::vector<int> &phoIdx,
+		       const std::vector<int> &jetIdx,
+		       int fireBoth=0) const
+   {
+     // if no trigger requested to check, return 1
+     if ((phoIdx.size()==0) && (jetIdx.size()==0)) return 1;
+     // if trigger requested, but info is not there, return 0
+     if ((phoIdx.size() && !photonTrig_fired) ||
+	 (jetIdx.size() && !jetTrig_fired)) return 0;
+     // check for the triggers
+     int fired=0;
+     // loop over photon triggers
+     for (unsigned int i=0; !fired && (i<phoIdx.size()); ++i) {
+       fired= photonTrig_fired->at(phoIdx[i]);
+     }
+     // if one photon and one jet trigger has to fire, check the condition
+     if (fireBoth && !fired) return 0;
+     // loop over jet triggers
+     for (unsigned int i=0; !fired && (i<jetIdx.size()); ++i) {
+       fired= jetTrig_fired->at(jetIdx[i]);
+     }
+     return fired;
+   }
+
+
    double alpha(int npvCorrectedJetE) const {
      if (pfjet2_E==0) return 0.;
      const double factor=(npvCorrectedJetE) ? 1 : pfjet2_E_NPVcorr/pfjet2_E;
