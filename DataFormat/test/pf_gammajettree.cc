@@ -55,6 +55,7 @@ void pf_gammajettree::PrintSelectedFields(int selection) {
 void pf_gammajettree::ActivateBranches_forRecHitsEnergyCalc() {
   ActivateBranches(3, "tagPho_energy","tagPho_eta","tagPho_phi");
   ActivateBranches(3, "ppfjet_eta","ppfjet_phi","ppfjet_pt");
+  ActivateBranches(1, "ppfjet_E");
   ActivateBranches(4, "ppfjet_unkown_E","ppfjet_electron_E",
 			   "ppfjet_muon_E","ppfjet_photon_E");
   ActivateBranches(4,"ppfjet_had_EcalE","ppfjet_had_id",
@@ -76,7 +77,8 @@ void pf_gammajettree::ActivateBranches_forFitSkim() {
   ActivateBranches(1, "tagPho_pt");
   ActivateBranches(3, "tagPho_idTight","tagPho_idLoose","tagPho_pixelSeed");
   ActivateBranches(2, "nPhotons","nPFJets");
-  ActivateBranches(1, "pfjet2_pt");
+  ActivateBranches(2, "photonTrig_fired","jetTrig_fired");
+  ActivateBranches(4, "pfjet2_pt","pfjet2_E","pfjet2_eta","pfjet2_phi");
   ActivateBranches(2, "tagPho_genEnergy", "ppfjet_genE");
   ActivateBranches_forRecHitsEnergyCalc();
   ActivateBranches_jetID(1);

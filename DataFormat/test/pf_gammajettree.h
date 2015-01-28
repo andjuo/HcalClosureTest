@@ -508,7 +508,10 @@ public :
      if (tagPho_pt < minPt) flag|=1;
      if (ppfjet_pt < minPt) flag|=2;
      if ((tagPho_pt>0.) && (pfjet2_pt/tagPho_pt>=0.2)) flag|=4;
-     if (fabs(tagPho_phi - ppfjet_phi) <= 2.95) flag|=8;
+     const double cPI= 4*atan(1);
+     double dphi= fabs(tagPho_phi - ppfjet_phi);
+     while (dphi>cPI) dphi=fabs(2*cPI-dphi);
+     if (dphi <= 2.95) flag|=8;
      if ((photonIDReq==int(_phoLooseID)) && (tagPho_idLoose==0)) flag|=16;
      if ((photonIDReq==int(_phoTightID)) && (tagPho_idTight==0)) flag|=32;
      //if (tagPho_pixelSeed != 0) flag|=64;
