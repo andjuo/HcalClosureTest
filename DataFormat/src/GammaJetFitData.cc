@@ -175,6 +175,8 @@ void GammaJetEvent_t::SetTagEtaPhiEn(double valEta, double valPhi,
 
 // ----------------------------------------------------------------
 
+// method meant to correct for the 2nd jet momentum in the transverse plain.
+// Note: the tag eta is not changed, only phi
 void GammaJetEvent_t::AddTagEEtaPhi(double valE2, double valEta2,
 				    double valPhi2)
 {
@@ -183,9 +185,15 @@ void GammaJetEvent_t::AddTagEEtaPhi(double valE2, double valEta2,
 	      << "an object with non-empty fTagHcalE.\n"
 	      << "The result is incorrect\n";
   }
-  const int code_check=0;
+
+  TLorentzVector tag,jet2;
+  tag .SetPtEtaPhiE(fTagEt,fTagEta,fTagPhi,fTagE);
+  jet2.SetPtEtaPhiE(valE2/cosh(valEta2),valEta2,valPhi2,valE2);
+  TLorentzVector tot= tag+jet2;
+
+  int code_check=0; // 1 - will print info, 2 - will check the phi angle
   if (code_check) {
-    // for some reason, sum_phi is sometimes different from what
+    // sum_phi from py is sometimes different from what
     // TLorentzVector gives
     double jet2Et= valE2/cosh(valEta2);
     double sum_px= fTagEt * cos(fTagPhi) + jet2Et * cos(valPhi2);
@@ -195,36 +203,61 @@ void GammaJetEvent_t::AddTagEEtaPhi(double valE2, double valEta2,
     double sum_eta= 0.5 * log( (sum_p+sum_pz)/(sum_p-sum_pz) );
     double sum_pt = sqrt(pow(sum_px,2) + pow(sum_py,2));
     double sum_phi= acos( sum_px / sum_pt );
-    double sum_phi_v2= asin( sum_py / sum_pt );
-    double sum_E= fTagE + valE2;
-    std::cout << "sum_p=" << sum_p << ", sum_pt=" << sum_pt
-	      << ", sum_eta=" << sum_eta << ", sum_phi=" << sum_phi
-	      << ", sum_phi(from py)=" << sum_phi_v2 << "\n";
-    std::cout << " (sumPx,sumPy,sumPz)=" << sum_px << ", " << sum_py
-	      << ", " << sum_pz << "\n";
-    std::cout << "      "; // align
-    std::cout << "totalE=" << sum_E << ", totalEt=" << sum_E/cosh(sum_eta) << "\n";
+    if ( sum_py<0) sum_phi= -sum_phi;
+
+    if (sum_phi!= tot.Phi()) {
+      // check for rounding error
+      if (fabs(sum_phi - tot.Phi())>1e-5) {
+	std::cout << "\nchk_phi != sum.Phi\n";
+	std::cout << "  sum_phi=" << sum_phi << "\n";
+	std::cout << "  tot.Phi=" << tot.Phi() << "\n";
+	code_check=1;
+      }
+    }
+
+    if (code_check==1) {
+      double sum_phi_v2= asin( sum_py / sum_pt );
+      double sum_E= fTagE + valE2; // to match the operation of TLorentzVector
+      std::cout << "\n";
+      std::cout << "fTagPhi=" << fTagPhi << ", fTagEta=" << fTagEta << "\n";
+      std::cout << "jet2Phi=" << valPhi2 << ", jet2Eta=" << valEta2 << "\n";
+      std::cout << "sum_p=" << sum_p << ", sum_pt=" << sum_pt
+		<< ", sum_eta=" << sum_eta << ", sum_phi=" << sum_phi
+		<< ", sum_phi(from py)=" << sum_phi_v2 << "\n";
+      std::cout << " (sumPx,sumPy,sumPz)=" << sum_px << ", " << sum_py
+		<< ", " << sum_pz << "\n";
+
+      // we want to have "operational" addition of vectors.
+      // that is, the total energy should not be corrected, only the direction
+      std::cout << " sum_pt*cosh(fTagEta)=" << sum_pt*cosh(fTagEta) << "\n";
+      std::cout << " px' = sum_pt*cos(sum_phi)=" << sum_pt*cos(sum_phi) <<"\n";
+      std::cout << " py' = sum_pt*sin(sum_phi)=" << sum_pt*sin(sum_phi) <<"\n";
+      std::cout << "      "; // align to compare to TLorentzVector
+      std::cout << "totalE=" << sum_E
+		<< ", totalEt=" << sum_E/cosh(sum_eta) << "\n";
+      std::cout << "TLorentzVector: tot.E()=" << tot.E()
+		<< ", tot.Et()=" << tot.Et()
+		<< ", tot.Eta()=" << tot.Eta()
+		<< ", tot.Phi()=" << tot.Phi() << "\n";
+      std::cout << " tot.(px,py,pz)=" << tot.Px() << ", " << tot.Py()
+		<< ", " << tot.Pz() << "; tot.pt=" << tot.Pt() << "\n";
+    }
   }
 
-  TLorentzVector tag,jet2;
-  tag .SetPtEtaPhiE(fTagEt,fTagEta,fTagPhi,fTagE);
-  jet2.SetPtEtaPhiE(valE2/cosh(valEta2),valEta2,valPhi2,valE2);
-  TLorentzVector sum= tag+jet2;
-  fTagEta= sum.Eta();
-  fTagPhi= sum.Phi();
-  fTagEcalE= sum.Energy();
-  fTagE= fTagEcalE;
-  fTagEt= sum.Et(); //fTagE/cosh(fTagEta);
+  //fTagEta= tot.Eta(); ! do not uncomment
+  fTagPhi  = tot.Phi();
+  fTagEcalE= tot.Pt() * cosh(fTagEta);
+  fTagE    = fTagEcalE;
+  fTagEt   = tot.Pt();
 
-  if (code_check) {
-    std::cout << "final: fTagE=" << fTagE << ", fTagEt=" << fTagEt
+  if (code_check==1) {
+    std::cout << "assigned values:\n";
+    std::cout << "  fTagE=" << fTagE << ", fTagEt=" << fTagEt
 	      << ", fTagEta=" << fTagEta
 	      << ", fTagPhi=" << fTagPhi << "\n";
-    std::cout << " (px,py,pz)=" << sum.Px() << ", " << sum.Py()
-	      << ", " << sum.Pz() << "\n";
-    std::cout << " tag.E=" << tag.Energy()<<", jet2.E=" << jet2.Energy()<<"\n";
-    //std::cout << " tag.P=" << tag.P() << ", jet2.P=" << jet2.P() << "\n";
-    //std::cout << " tag.M=" << tag.M() << ", jet2.M=" << jet2.M() << "\n";
+    std::cout << "  derived (px,py,pz)=" << fTagEt*cos(fTagPhi)
+	      << ", " << fTagEt*sin(fTagPhi) << ", "
+	      << fTagEt*sinh(fTagEta) <<"\n";
   }
 }
 
