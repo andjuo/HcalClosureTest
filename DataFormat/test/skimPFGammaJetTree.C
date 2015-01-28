@@ -1,13 +1,23 @@
 #include "../interface/GammaJetFitData.h"
 #include "pf_gammajettree.h"
+#include "helper.h"
 
 void skimPFGammaJetTree(TString inpFileName,
 			Long64_t maxEntries=-1,
-			TString outFileName="skim.root") {
+			TString outFileName="skim.root",
+			TString restrictTriggers="|")
+{
+
+  std::vector<int> chkPhoTriggers,chkJetTriggers;
+  if (!identifyTriggerIndices(restrictTriggers,
+			      chkPhoTriggers,chkJetTriggers,0)) return;
+
   pf_gammajettree inpData(inpFileName);
 
-  inpData.DeactivateBranches();
-  inpData.ActivateBranches_forFitSkim();
+  if (1) { // deactivation speeds-up n-tuple reading
+    inpData.DeactivateBranches();
+    inpData.ActivateBranches_forFitSkim();
+  }
 
   //
   GammaJetEvent_t::Class()->IgnoreTObjectStreamer();
@@ -38,6 +48,20 @@ void skimPFGammaJetTree(TString inpFileName,
     if (iEntry%10000==0) std::cout << " ... reading entry " << iEntry << "\n";
     //std::cout << "ientry=" << iEntry << "\n";
 
+    if (!inpData.passCuts(20.,int(_phoTightID),1)) continue; // recommended use
+    //if ( inpData.pfjet2_pt/inpData.tagPho_pt > 0.05) continue; // stricter alpha cut
+
+    if (1) {
+      if ((fabs(inpData.tagPho_eta)>2.4) || (fabs(inpData.ppfjet_eta)>2.4))
+	continue;
+
+      if ((restrictTriggers.Length()>1) &&
+	  !inpData.hltTriggerFired(chkPhoTriggers,chkJetTriggers)) continue;
+    }
+
+    passedCount++;
+
+
     aux.SetEventNo(inpData.EventNumber);
     aux.SetRunNo(inpData.RunNumber);
     aux.SetGenE(inpData.tagPho_genEnergy,inpData.ppfjet_genE);
@@ -63,8 +87,6 @@ void skimPFGammaJetTree(TString inpFileName,
 		<< " .. skipping\n";
       continue;
     }
-
-    passedCount++;
 
     tree->Fill();
   }
