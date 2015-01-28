@@ -6,6 +6,7 @@
 //#include "colorPalettes.hh"
 #include "ComparisonPlot.hh"
 #include "../interface/HistoCollector.h"
+#include <TLorentzVector.h>
 #include "helper.h"
 
 // ------------------------------------------------------
@@ -51,7 +52,8 @@ void analyzePFGammaJetTree(TString inpFileName,
 			   Long64_t maxEntries=-1,
 			   double extraWeightFactor=-1.,
 			   TString plotOutDir_user="",
-			   int saveCollection_user=-1) {
+			   int saveCollection_user=-1,
+			   TString restrictTriggers="|") {
 
 #ifdef helper_HH
   if (plotOutDir_user.Length()>0) plotOutDir= plotOutDir_user;
@@ -60,11 +62,17 @@ void analyzePFGammaJetTree(TString inpFileName,
 
   collector.Clear();
 
+  std::vector<int> chkPhoTriggers,chkJetTriggers;
+  if (!identifyTriggerIndices(restrictTriggers,
+			      chkPhoTriggers,chkJetTriggers,0)) return;
+
   // book histograms
   double cPI= 4*atan(1);
-  int show_dPhi=0;
-  TH1D *h1_dPhi= new TH1D("h1_dPhi","#Delta#Phi;#Delta#Phi;count",100,-2*cPI,2*cPI);
+  int show_dPhi=1;
+  TH1D *h1_dPhi= new TH1D("h1_dPhi","#Delta#Phi(#gamma,j);#Delta#Phi;count",100,-2*cPI,2*cPI);
+  TH1D *h1_dPhi_Abs= new TH1D("h1_dPhi_Abs","Absolute value of |#Delta#Phi(#gamma,j)|;|#Delta#Phi|;count",100,0,2*cPI);
   prepareHisto(h1_dPhi);
+  prepareHisto(h1_dPhi_Abs);
 
   int show_pho_vs_jet_phi=1;
   TH2D *h2_pho_vs_jet_phi= new TH2D("h2_pho_jet_phi",
@@ -123,25 +131,13 @@ void analyzePFGammaJetTree(TString inpFileName,
   prepareHisto(h1_jet_pT_PFoverGen,1);
   prepareHisto(h1_jet_pT_RHoverGen,1);
 
-  int show_jet_energy_PF_over_Gen_divScale=0; // this is not correct plot
-  TH1D *h1_jet_energy_PFoverGen_divScale=
-    new TH1D("h1_jet_energy_PFoverGen_divScale",
-      "Jet energy ratio (PF/scale div gen);E_{PF}/E_{gen}/JEC_{scale};count",
-					  100,0.,2.5);
-  TH1D *h1_jet_energy_RHoverGen_divScale=
-    new TH1D("h1_jet_energy_RHoverGen_divScale",
-      "Jet energy ratio (RH/scale div gen);E_{RH}/E_{gen}/JEC_{scale};count",
-					  100,0.,2.5);
-  prepareHisto(h1_jet_energy_PFoverGen_divScale,1);
-  prepareHisto(h1_jet_energy_RHoverGen_divScale,1);
-
   int show_pho2D_pt=1;
   TH2D *h2_pho_pt= new TH2D("h2_pho_pt","Photon p_{T};gen p_{T};reco p_{T}",
 			    100,0.,c_pt_max,
 			    100,0.,c_pt_max);
   prepareHisto(h2_pho_pt);
 
-  int show_pho2D_ptMap=1;
+  int show_pho2D_ptMap=0;
   TH2D *h2_pho_ptMap= (TH2D*)h2_pho_pt->Clone("h2_pho_ptMap");
   h2_pho_ptMap->SetTitle("Photon average quality");
   TH2D *h2_pho_ptMapCount= (TH2D*)h2_pho_pt->Clone("h2_pho_ptMapCount");
@@ -200,15 +196,71 @@ void analyzePFGammaJetTree(TString inpFileName,
 					100,-2.5*cPI, 2.5*cPI);
   prepareHisto(h2_pho_vs_jet_recoEta);
 
+  int show_jet_div_gamma_pT_Reco=1;
+  int show_jet_div_gamma_pT_Reco_chk=0;
+  TH1D *h1_jet_div_gamma_pTPF_Reco= new TH1D("h1_jet_div_gamma_pTPF_Reco",
+      "Jet E_{T} ratio to #gamma p_{T} (PF);p_{jet,T}^{PF}/p_{#gamma,T};count",
+					     100,0.,2.5);
+  TH1D *h1_jet_div_gamma_pTRH_Reco= new TH1D("h1_jet_div_gamma_pTRH_Reco",
+      "Jet E_{T} ratio to #gamma p_{T} (RH);p_{jet,T}^{RH}/p_{#gamma,T};count",
+					     100,0.,2.5);
+  TH1D *h1_jet_div_gamma_pTRH_Reco_chk= new TH1D("h1_jet_div_gamma_pTRH_Reco_chk",
+      "Jet E_{T} ratio to #gamma p_{T} (RH) control plot;p_{jet,T}^{RH}/p_{#gamma,T};count",
+					     100,0.,2.5);
+  prepareHisto(h1_jet_div_gamma_pTPF_Reco,1);
+  prepareHisto(h1_jet_div_gamma_pTRH_Reco,1);
+  prepareHisto(h1_jet_div_gamma_pTRH_Reco_chk,1);
+
+  // jet vs gamma+addedJet2
+  int show_jet_div_gammaJet2_pT_Reco=1;
+  TH1D *h1_jet_div_gammaJet2_pTPF_Reco=
+    new TH1D("h1_jet_div_gammaJet2_pTPF_Reco",
+      "Jet E_{T} ratio to (#gamma+jet2) p_{T} (PF);p_{jet,T}^{PF}/(p_{#gamma,T}+p_{jet2,T});count",
+	     100,0.,2.5);
+  TH1D *h1_jet_div_gammaJet2_pTRH_Reco=
+    new TH1D("h1_jet_div_gammaJet2_pTRH_Reco",
+      "Jet E_{T} ratio to (#gamma+jet2) p_{T} (RH);p_{jet,T}^{RH}/(p_{#gamma,T}+p_{jet2,T});count",
+	     100,0.,2.5);
+  TH1D *h1_jetJet2_div_gamma_pTPF_Reco=
+    new TH1D("h1_jetJet2_div_gamma_pTPF_Reco",
+      "(Jet+jet2) E_{T} ratio to #gamma p_{T} (PF);(p_{jet,T}^{PF}+p_{jet2,T})/p_{#gamma,T};count",
+	     100,0.,2.5);
+
+  prepareHisto(h1_jet_div_gammaJet2_pTPF_Reco,1);
+  prepareHisto(h1_jet_div_gammaJet2_pTRH_Reco,1);
+  prepareHisto(h1_jetJet2_div_gamma_pTPF_Reco,1);
+
+  int show_jet_div_gamma_Hemi=1;
+  TH1D *h1_jet_div_gamma_pTPF_jetHemi_Reco= new TH1D("h1_jet_div_gamma_pTPF_jetHemi_Reco",
+      "Jet E_{T} ratio to #gamma p_{T} (PF), 2nd jet in jet Hemi;p_{jet,T}^{PF}/p_{#gamma,T} | (2nd jet jetHemi);count",
+					     100,0.,2.5);
+  TH1D *h1_jet_div_gamma_pTPF_phoHemi_Reco= new TH1D("h1_jet_div_gamma_pTPF_phoHemi_Reco",
+      "Jet E_{T} ratio to #gamma p_{T} (PF), 2nd jet in pho Hemi;p_{jet,T}^{PF}/p_{#gamma,T} | (2nd jet phoHemi);count",
+					     100,0.,2.5);
+
+  TH1D *h1_jetJet2_div_gamma_pTPF_jetHemi_Reco=
+    new TH1D("h1_jetJet2_div_gamma_pTPF_jetHemi_Reco",
+	     "(Jet+jet2) E_{T} ratio to #gamma p_{T} (PF,jetHemi);(p_{jet,T}^{PF}+p_{jet2,T})/p_{#gamma,T};count",
+	     100,0.,2.5);
+  TH1D *h1_jet_div_gammaJet2_pTPF_phoHemi_Reco=
+    new TH1D("h1_jet_div_gammaJet2_pTPF_phoHemi_Reco",
+	     "Jet E_{T} ratio to (#gamma+jet2) p_{T} (PF,phoHemi);p_{jet,T}^{PF}/(p_{#gamma,T}+p_{jet2,T}^{PF});count",
+	     100,0.,2.5);
+
+  prepareHisto(h1_jet_div_gamma_pTPF_jetHemi_Reco,1);
+  prepareHisto(h1_jet_div_gamma_pTPF_phoHemi_Reco,1);
+  prepareHisto(h1_jetJet2_div_gamma_pTPF_jetHemi_Reco,1);
+  prepareHisto(h1_jet_div_gammaJet2_pTPF_phoHemi_Reco,1);
+
   // process the data
   pf_gammajettree inpData(inpFileName);
 
-  //inpData.DeactivateBranches();
-  inpData.ActivateBranches_forFitSkim();
-  inpData.ActivateBranches(2,"ppfjet_pt","ppfjet_E");
-  inpData.ActivateBranches(1,"ppfjet_scale");
-  inpData.ActivateBranches_genBasicSet();
-  if (show_jet_tightID) inpData.ActivateBranches_jetID(1);
+  if (1) { // deactivation speeds-up file reading
+    inpData.DeactivateBranches();
+    inpData.ActivateBranches_forFitSkim();
+    inpData.ActivateBranches_genBasicSet();
+  }
+
 
   GammaJetEvent_t *dt= new GammaJetEvent_t();
   GammaJetEventAuxInfo_t aux;
@@ -226,7 +278,17 @@ void analyzePFGammaJetTree(TString inpFileName,
     if (iEntry%1000==0) std::cout << " ... reading entry " << iEntry << "\n";
     //std::cout << "ientry=" << iEntry << "\n";
 
-    //if (!inpData.passCuts(1,2)) continue; // recommended use
+    if (!inpData.passCuts(20.,int(_phoTightID),1)) continue; // recommended use
+    //if ( inpData.pfjet2_pt/inpData.tagPho_pt > 0.05) continue; // stricter alpha cut
+
+    if (1) {
+      if ((fabs(inpData.tagPho_eta)>2.4) || (fabs(inpData.ppfjet_eta)>2.4))
+	continue;
+
+      if ((restrictTriggers.Length()>1) &&
+	  !inpData.hltTriggerFired(chkPhoTriggers,chkJetTriggers)) continue;
+    }
+
 
     passedCount++;
 
@@ -248,7 +310,11 @@ void analyzePFGammaJetTree(TString inpFileName,
     dt->SetProbeEtaPhiEn(inpData.ppfjet_eta, inpData.ppfjet_phi,
 			 ecalE+hcalE_noRecHits, inpData.getHcalEMap(1,1e-4));
 
+    double dphi_abs= fabs(dt->GetTagPhi() - dt->GetProbePhi());
+    if (dphi_abs>cPI) dphi_abs= 2*cPI - dphi_abs;
+
     h1_dPhi->Fill( dt->GetTagPhi() - dt->GetProbePhi() , w);
+    h1_dPhi_Abs->Fill ( dphi_abs, w );
     h2_pho_vs_jet_phi->Fill( inpData.tagPho_phi, inpData.ppfjet_phi, w);
     h1_dPt_PF->Fill( inpData.tagPho_pt - inpData.ppfjet_pt , w);
     h1_jet_tightID->Fill( inpData.passTightJetID(1), w);
@@ -257,8 +323,6 @@ void analyzePFGammaJetTree(TString inpFileName,
     h1_jet_energyRH->Fill( dt->GetProbeEtot(), w);
     h1_jet_energy_PFoverGen->Fill( inpData.ppfjet_E/inpData.ppfjet_genE, w);
     h1_jet_energy_RHoverGen->Fill( dt->GetProbeEtot()/inpData.ppfjet_genE, w);
-    h1_jet_energy_PFoverGen_divScale->Fill( inpData.ppfjet_E/inpData.ppfjet_genE/inpData.ppfjet_scale, w);
-    h1_jet_energy_RHoverGen_divScale->Fill( dt->GetProbeEtot()/inpData.ppfjet_genE/inpData.ppfjet_scale, w);
     h1_jet_pT_PFoverGen->Fill( inpData.ppfjet_pt/inpData.ppfjet_genpt, w);
     h1_jet_pT_RHoverGen->Fill( dt->GetProbeETtot()/inpData.ppfjet_genpt, w);
     h2_pho_pt->Fill( inpData.tagPho_genPt, inpData.tagPho_pt, w);
@@ -271,6 +335,59 @@ void analyzePFGammaJetTree(TString inpFileName,
     h2_pho_vs_jet_recoPtPF->Fill( inpData.tagPho_pt, inpData.ppfjet_pt, w);
     h2_pho_vs_jet_recoPtRH->Fill( inpData.tagPho_pt, dt->GetProbeETtot(), w);
     h2_pho_vs_jet_recoEta->Fill( inpData.tagPho_eta, inpData.ppfjet_eta, w);
+
+    h1_jet_div_gamma_pTPF_Reco->Fill( inpData.ppfjet_pt/inpData.tagPho_pt, w );
+    h1_jet_div_gamma_pTRH_Reco->Fill( dt->GetProbeETtot()/inpData.tagPho_pt, w );
+    h1_jet_div_gamma_pTRH_Reco_chk->Fill( dt->GetProbeETtot() / dt->GetTagETtot(), w );
+
+    if (1) {
+      // add gamma and 2nd jet
+      GammaJetEvent_t dt2RH_gammaJet2(*dt);
+      // add the jet contribution to the transverse momentum
+      if (0) {
+	// pfjet PF energy is different from pT
+	if ( inpData.pfjet2_E / cosh(inpData.pfjet2_eta) != inpData.pfjet2_pt )
+	  {
+	    std::cout << "\tpfjet2_E check failed: "
+		      << inpData.pfjet2_E/cosh(inpData.pfjet2_eta)
+		      << " vs pt=" << inpData.pfjet2_pt << "\n";
+	  }
+      }
+      dt2RH_gammaJet2.AddTagEEtaPhi( inpData.pfjet2_E,
+			   inpData.pfjet2_eta, inpData.pfjet2_phi );
+      double pt_gammaJet2= dt2RH_gammaJet2.GetTagETtot();
+
+      h1_jet_div_gammaJet2_pTPF_Reco->Fill( inpData.ppfjet_pt/ pt_gammaJet2, w );
+      h1_jet_div_gammaJet2_pTRH_Reco->Fill( dt->GetProbeETtot() / pt_gammaJet2, w );
+
+      TLorentzVector jet,jet2,sum;
+      jet .SetPtEtaPhiE(inpData.ppfjet_pt,inpData.ppfjet_eta,inpData.ppfjet_phi,inpData.ppfjet_E);
+      jet2.SetPtEtaPhiE(inpData.pfjet2_pt,inpData.pfjet2_eta,inpData.pfjet2_phi,inpData.pfjet2_E);
+      sum= jet+jet2;
+      // take into account only the momentum change
+      double jetJet2_pt=sqrt(pow(sum.Px(),2)+pow(sum.Py(),2));
+      h1_jetJet2_div_gamma_pTPF_Reco->Fill( jetJet2_pt / inpData.tagPho_pt, w );
+
+      double dPhi1 = fabs(inpData.tagPho_phi - inpData.pfjet2_phi);
+      double dPhi2 = fabs(inpData.ppfjet_phi - inpData.pfjet2_phi);
+      if (dPhi1 > cPI) dPhi1= 2*cPI - dPhi1;
+      if (dPhi2 > cPI) dPhi2= 2*cPI - dPhi2;
+      int photonHemi=(dPhi1<dPhi2) ? 1:0;
+
+      //double phoPhi=inpData.tagPho_phi;
+      //double jetPhi=inpData.ppfjet_phi;
+      //double jet2Phi=inpData.pfjet2_phi;
+      //std::cout << "phi: " << phoPhi << "," << jetPhi << "," << jet2Phi << "  ";
+      //std::cout << "  dPhi:" << dPhi1 << ", " << dPhi2 << ": photonSide=" << photonHemi << "\n";
+      if (photonHemi) {
+	h1_jet_div_gamma_pTPF_phoHemi_Reco->Fill( inpData.ppfjet_pt / inpData.tagPho_pt, w );
+	h1_jet_div_gammaJet2_pTPF_phoHemi_Reco->Fill( inpData.ppfjet_pt / pt_gammaJet2, w );
+      }
+      else {
+	h1_jet_div_gamma_pTPF_jetHemi_Reco->Fill ( inpData.ppfjet_pt / inpData.tagPho_pt, w );
+	h1_jetJet2_div_gamma_pTPF_jetHemi_Reco->Fill (jetJet2_pt / inpData.tagPho_pt, w );
+      }
+    }
 
     int gen_debug=0;
     if (gen_debug==1) {
@@ -319,16 +436,15 @@ void analyzePFGammaJetTree(TString inpFileName,
   }
 
   std::cout << "nEntries=" << nEntries << ", passedCount=" << passedCount << "\n";
+  //return;
 
   displayHisto(show_dPhi, h1_dPhi,"dPhi","LPE");
+  displayHisto(show_dPhi, h1_dPhi_Abs,"dPhiAbs","LPE");
   displayHisto(show_pho_vs_jet_phi, h2_pho_vs_jet_phi,"pho_vs_jet_phi","COLZ");
   displayHisto(show_dPt_PF, h1_dPt_PF, "dPt_PF","LPE");
   displayHisto(show_jet_tightID, h1_jet_tightID,"jet_tightID","LPE");
   displayHisto(show_jet_energy_PF_over_Gen, h1_jet_energy_PFoverGen,"e_PFoverGen","hist");
   displayHisto(show_jet_energy_PF_over_Gen, h1_jet_energy_RHoverGen,"e_RHoverGen","hist");
-
-  displayHisto(show_jet_energy_PF_over_Gen_divScale, h1_jet_energy_PFoverGen_divScale,"e_PFoverGen_divScale","hist");
-  displayHisto(show_jet_energy_PF_over_Gen_divScale, h1_jet_energy_RHoverGen_divScale,"e_RHoverGen_divScale","hist");
 
   displayHisto(show_jet_pT_PF_over_Gen, h1_jet_pT_PFoverGen,"pT_PFoverGen","hist");
   displayHisto(show_jet_pT_PF_over_Gen, h1_jet_pT_RHoverGen,"pT_RHoverGen","hist");
@@ -363,6 +479,21 @@ void analyzePFGammaJetTree(TString inpFileName,
 		      "E [GeV]","count", "jet_en_gen_over_rh",
 		      "hist","hist");
   }
+
+  displayHisto(show_jet_div_gamma_pT_Reco, h1_jet_div_gamma_pTPF_Reco, "jet_div_pho_pT_PF","LPE");
+  displayHisto(show_jet_div_gamma_pT_Reco, h1_jet_div_gamma_pTRH_Reco, "jet_div_pho_pT_RH","LPE");
+  displayHisto(show_jet_div_gamma_pT_Reco_chk, h1_jet_div_gamma_pTRH_Reco_chk, "jet_div_pho_pT_RH_chk","LPE");
+
+  displayHisto(show_jet_div_gammaJet2_pT_Reco, h1_jet_div_gammaJet2_pTPF_Reco, "jet_div_phoJet2_pT_PF","LPE");
+  displayHisto(show_jet_div_gammaJet2_pT_Reco, h1_jet_div_gammaJet2_pTRH_Reco, "jet_div_phoJet2_pT_RH","LPE");
+  displayHisto(show_jet_div_gammaJet2_pT_Reco, h1_jetJet2_div_gamma_pTPF_Reco, "jetJet2_div_pho_pT_PF","LPE");
+
+  displayHisto(show_jet_div_gamma_Hemi, h1_jet_div_gamma_pTPF_jetHemi_Reco, "jet_div_gamma_pTPF_jetHemi","LPE");
+  displayHisto(show_jet_div_gamma_Hemi, h1_jet_div_gamma_pTPF_phoHemi_Reco, "jet_div_gamma_pTPF_phoHemi","LPE");
+  displayHisto(show_jet_div_gamma_Hemi, h1_jetJet2_div_gamma_pTPF_jetHemi_Reco, "jetJet2_div_pho_pTPF_jetHemi","LPE");
+  displayHisto(show_jet_div_gamma_Hemi, h1_jet_div_gammaJet2_pTPF_phoHemi_Reco, "jet_div_phoJet2_pTPF_phoHemi","LPE");
+
+
 
   if (saveCollection) {
     TString outFName=TString("saved_") + plotOutDir + TString(".root");
